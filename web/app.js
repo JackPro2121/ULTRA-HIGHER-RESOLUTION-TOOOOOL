@@ -279,6 +279,35 @@ function handleFile(file) {
   };
   video.src = URL.createObjectURL(file);
 
+  // Auto-stream upload to local inputs/ directory if running on local server
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    const progContainer = document.getElementById('upload-progress-container');
+    const progBar = document.getElementById('upload-progress-bar');
+    const statusText = document.getElementById('upload-status-text');
+    const percentText = document.getElementById('upload-percent-text');
+
+    if (progContainer) progContainer.style.display = 'block';
+    if (statusText) statusText.textContent = `Streaming ${file.name} to disk...`;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/upload?filename=${encodeURIComponent(file.name)}`, true);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        if (progBar) progBar.style.width = `${pct}%`;
+        if (percentText) percentText.textContent = `${pct}%`;
+      }
+    };
+    xhr.onload = () => {
+      if (progContainer) {
+        if (statusText) statusText.textContent = `✅ Saved to inputs/${file.name}`;
+        setTimeout(() => { progContainer.style.display = 'none'; }, 2000);
+      }
+      showToast(`Saved to inputs/${file.name}`);
+    };
+    xhr.send(file);
+  }
+
   showToast(`Loaded ${file.name} (${sizeText})`);
   updateGeneratedCommand();
 }
@@ -504,7 +533,95 @@ function startLiveMonitor(repo, pat) {
     } catch (e) {
       // Background poll
     }
-  }, 6000);
+// Local Execution Engine
+async function runLocally() {
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    copyCliCommand();
+    alert('You are running on a remote host (Vercel). To render locally, run `python dashboard_server.py` on your PC, or click "Dispatch on GitHub Actions" for free cloud render!');
+    return;
+  }
+
+  const inputTarget = state.fileName || 'inputs/test_mobile_raw.mp4';
+  const monitorCard = document.getElementById('live-monitor-card');
+  const statusText = document.getElementById('monitor-status-text');
+  const timerText = document.getElementById('monitor-timer');
+  const msgText = document.getElementById('monitor-msg');
+  const actionsEl = document.getElementById('monitor-actions');
+  const dlBtn = document.getElementById('btn-direct-download');
+
+  monitorCard.style.display = 'flex';
+  actionsEl.style.display = 'none';
+  statusText.textContent = '🚀 Local Master Render Started...';
+  msgText.textContent = `Processing ${inputTarget} to ${state.resolution.toUpperCase()} @ ${state.fps} FPS master quality.`;
+
+  const btnLocal = document.getElementById('btn-run-local');
+  if (btnLocal) btnLocal.disabled = true;
+
+  try {
+    const res = await fetch('/api/enhance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        input_path: inputTarget,
+        preset: state.preset,
+        resolution: state.resolution,
+        fps: state.fps,
+        motion_mode: state.motionMode,
+        codec: state.codec,
+        bloom: state.bloom,
+        sharpness: state.sharpness,
+        contrast: state.contrast,
+        bitrate: state.bitrate,
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.success) {
+      statusText.textContent = '❌ Failed to start local job';
+      if (btnLocal) btnLocal.disabled = false;
+      return;
+    }
+
+    const jobId = data.job_id;
+    const startT = Date.now();
+    showToast('Local render running! Watch live monitor.');
+
+    const localInterval = setInterval(async () => {
+      const elapsed = Math.floor((Date.now() - startT) / 1000);
+      const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+      const secs = (elapsed % 60).toString().padStart(2, '0');
+      timerText.textContent = `${mins}:${secs}`;
+
+      try {
+        const sRes = await fetch(`/api/status?id=${jobId}`);
+        const sData = await sRes.json();
+
+        if (sData.status === 'COMPLETED') {
+          clearInterval(localInterval);
+          statusText.textContent = '✅ Local Master Render Complete!';
+          msgText.textContent = `Output saved to: outputs/${sData.output_file}`;
+          dlBtn.href = `/api/outputs`;
+          dlBtn.target = '_blank';
+          dlBtn.textContent = 'View in Outputs Folder';
+          actionsEl.style.display = 'block';
+          if (btnLocal) btnLocal.disabled = false;
+          showToast('Master render completed!');
+        } else if (sData.status === 'FAILED') {
+          clearInterval(localInterval);
+          statusText.textContent = '❌ Render Error';
+          msgText.textContent = sData.error || 'Check terminal console for details.';
+          if (btnLocal) btnLocal.disabled = false;
+        }
+      } catch (err) {
+        // Poll
+      }
+    }, 2500);
+
+  } catch (e) {
+    statusText.textContent = '❌ Connection Error';
+    msgText.textContent = e.message;
+    if (btnLocal) btnLocal.disabled = false;
+  }
 }
 
 // Toast helper

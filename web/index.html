@@ -332,12 +332,16 @@
         <div class="action-card">
           <div class="action-buttons">
             <button class="btn-action-primary" id="btn-trigger-github" onclick="openGitHubModal()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               <span>Dispatch on GitHub Actions ($0 Free)</span>
+            </button>
+            <button class="btn-action-local" id="btn-run-local" onclick="runLocally()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span>Run on Local PC Engine</span>
             </button>
             <button class="btn-action-secondary" id="btn-copy-command" onclick="copyCliCommand()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span>Copy CLI Command</span>
+              <span>Copy CLI</span>
             </button>
           </div>
 
