@@ -358,24 +358,49 @@ function openGitHubModal() {
 
   preview.textContent = JSON.stringify(payload, null, 2);
   modal.classList.add('active');
+  const alertBox = document.getElementById('modal-alert-box');
+  if (alertBox) alertBox.style.display = 'none';
 }
 
 function closeGitHubModal() {
   document.getElementById('github-modal').classList.remove('active');
 }
 
+function openGitHubActionsDirectly() {
+  const repo = document.getElementById('gh-repo-input').value.trim() || state.githubRepo;
+  const workflowUrl = `https://github.com/${repo}/actions/workflows/enhance_video.yml`;
+  window.open(workflowUrl, '_blank');
+  showToast('Opening GitHub Actions in new tab! Click "Run workflow"');
+  closeGitHubModal();
+}
+
 async function submitGitHubDispatch() {
   const repo = document.getElementById('gh-repo-input').value.trim() || state.githubRepo;
-  const pat = document.getElementById('gh-pat-input').value.trim() || state.githubPat;
+  const pat = document.getElementById('gh-pat-input').value.trim();
+  const alertBox = document.getElementById('modal-alert-box');
+  const alertText = document.getElementById('modal-alert-text');
+
+  const showAlert = (msg) => {
+    if (alertBox && alertText) {
+      alertText.textContent = msg;
+      alertBox.style.display = 'block';
+    } else {
+      alert(msg);
+    }
+  };
 
   if (!repo) {
-    alert('Please enter your GitHub Repository');
+    showAlert('Please enter your GitHub Repository name');
     return;
   }
 
-  if (pat) {
-    localStorage.setItem('hyper_res_gh_pat', pat);
+  if (!pat) {
+    showAlert('Please paste your Personal Access Token (PAT) starting with ghp_, or click "Run Directly on GitHub" above!');
+    return;
   }
+
+  localStorage.setItem('hyper_res_gh_pat', pat);
+  if (alertBox) alertBox.style.display = 'none';
 
   const btn = document.getElementById('btn-submit-dispatch');
   btn.textContent = 'Dispatching to Cloud...';
@@ -399,6 +424,7 @@ async function submitGitHubDispatch() {
           fps: state.fps.toString(),
           motion_mode: state.motionMode,
           sharpness: state.sharpness.toString(),
+          bitrate: state.bitrate.toString(),
           bloom: state.bloom,
           codec: state.codec,
         },
@@ -411,10 +437,14 @@ async function submitGitHubDispatch() {
       startLiveMonitor(repo, pat);
     } else {
       const err = await response.json().catch(() => ({ message: response.statusText }));
-      alert(`Dispatch failed: ${err.message || 'Check repository and token permissions.'}`);
+      if (response.status === 401 || (err.message && err.message.toLowerCase().includes('bad credentials'))) {
+        showAlert('❌ Bad credentials: Token is invalid or expired. Please generate a new GitHub Token with "workflow" permission, or use the "Run Directly on GitHub" button above!');
+      } else {
+        showAlert(`Dispatch failed (${response.status}): ${err.message || 'Check permissions.'}`);
+      }
     }
   } catch (e) {
-    alert(`Error dispatching workflow: ${e.message}`);
+    showAlert(`Error dispatching workflow: ${e.message}`);
   } finally {
     btn.textContent = 'Launch Cloud Master 🚀';
     btn.disabled = false;

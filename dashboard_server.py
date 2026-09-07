@@ -39,7 +39,20 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path == "/api/status":
+        if parsed.path in ["/favicon.ico", "/favicon.svg"]:
+            fav_path = WEB_DIR / "favicon.svg"
+            if fav_path.exists():
+                self.send_response(200)
+                self.send_header("Content-Type", "image/svg+xml")
+                self.send_header("Content-Length", str(fav_path.stat().st_size))
+                self.end_headers()
+                with open(fav_path, "rb") as f:
+                    self.wfile.write(f.read())
+            else:
+                self.send_response(204)
+                self.end_headers()
+            return
+        elif parsed.path == "/api/status":
             self.handle_api_status(parsed)
         elif parsed.path == "/api/outputs":
             self.handle_api_outputs()
