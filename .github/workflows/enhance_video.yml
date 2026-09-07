@@ -18,6 +18,7 @@ on:
           - "alight_motion_dark"
           - "cyberpunk_neon"
           - "raw_master_8k"
+          - "extreme_phone_killer_12k"
       resolution:
         description: "Target Resolution"
         required: true
@@ -28,6 +29,7 @@ on:
           - "1080p"
           - "2k"
           - "8k"
+          - "12k"
       fps:
         description: "Target Frame Rate (Motion Flow)"
         required: true
@@ -36,6 +38,8 @@ on:
         options:
           - "60"
           - "120"
+          - "240"
+          - "480"
           - "30"
       motion_mode:
         description: "Motion Smoothing Mode"
@@ -48,6 +52,10 @@ on:
           - "framerate"
       sharpness:
         description: "AMD CAS Sharpness (0.0 to 1.0, empty for preset default)"
+        required: false
+        default: ""
+      bitrate:
+        description: "Master Bitrate in Mbps (e.g. 55, 80, 120, empty for preset default)"
         required: false
         default: ""
       bloom:
@@ -126,6 +134,10 @@ jobs:
 
           if [ -n "${{ github.event.inputs.sharpness }}" ]; then
             CLI_ARGS="$CLI_ARGS --sharpness ${{ github.event.inputs.sharpness }}"
+          fi
+
+          if [ -n "${{ github.event.inputs.bitrate }}" ]; then
+            CLI_ARGS="$CLI_ARGS --bitrate ${{ github.event.inputs.bitrate }}"
           fi
 
           echo "Running: python core/pipeline.py $CLI_ARGS"

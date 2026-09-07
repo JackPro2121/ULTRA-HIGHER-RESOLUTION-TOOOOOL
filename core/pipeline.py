@@ -151,6 +151,7 @@ def enhance_video(
     cas_override: Optional[float] = None,
     contrast_override: Optional[float] = None,
     saturation_override: Optional[float] = None,
+    bitrate_override: Optional[int] = None,
     codec: str = "h264",
     generate_comparison: bool = True,
 ) -> Dict[str, Any]:
@@ -179,7 +180,9 @@ def enhance_video(
     print(f" Preset      : {preset['name']}")
     print(f" Target Res  : {resolution.upper()}")
     print(f" Target FPS  : {target_fps} FPS (Mode: {motion_mode})")
-    print(f" Codec       : {codec.upper()} Master Bitrate: {preset.get('bitrate_mbps', 55)} Mbps")
+
+    bitrate_mbps = bitrate_override if bitrate_override is not None else preset.get("bitrate_mbps", 55)
+    print(f" Codec       : {codec.upper()} Master Bitrate: {bitrate_mbps} Mbps")
 
     # Build Complex Filtergraph
     filtergraph_str, out_w, out_h = build_filtergraph(
@@ -195,8 +198,6 @@ def enhance_video(
         saturation_override=saturation_override,
     )
 
-    bitrate_mbps = preset.get("bitrate_mbps", 55)
-    
     # FFmpeg Command Assembly
     cmd = ["ffmpeg", "-y", "-i", local_input, "-filter_complex", filtergraph_str, "-map", "[outv]"]
 
@@ -289,7 +290,7 @@ def main():
         "-fps", "--fps",
         type=int,
         default=60,
-        help="Target frame rate (30, 60, 120)"
+        help="Target frame rate (30, 60, 120, 240, 480)"
     )
     parser.add_argument(
         "-m", "--motion-mode",
@@ -301,6 +302,7 @@ def main():
     parser.add_argument("--sharpness", type=float, default=None, help="Override CAS sharpness strength (0.0 to 1.0)")
     parser.add_argument("--contrast", type=float, default=None, help="Override contrast factor (e.g. 1.15)")
     parser.add_argument("--saturation", type=float, default=None, help="Override saturation factor (e.g. 1.25)")
+    parser.add_argument("--bitrate", type=int, default=None, help="Override export bitrate in Mbps (e.g. 80, 120)")
     parser.add_argument("--codec", default="h264", choices=["h264", "h265"], help="Video codec (h264 or h265)")
     parser.add_argument("--no-comparison", action="store_true", help="Skip generating before/after comparison image")
 
@@ -317,6 +319,7 @@ def main():
         cas_override=args.sharpness,
         contrast_override=args.contrast,
         saturation_override=args.saturation,
+        bitrate_override=args.bitrate,
         codec=args.codec,
         generate_comparison=not args.no_comparison,
     )

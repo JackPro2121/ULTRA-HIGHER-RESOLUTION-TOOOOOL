@@ -1,20 +1,24 @@
 /**
- * HYPER-RES 8K // Viral TikTok Video Enhancer Web Controller
+ * HYPER-RES PRO // 12K & 480 FPS Viral Video Dashboard Controller
  */
 
 // Application State
 const state = {
-  sourceType: 'url',
+  sourceType: 'file',
   videoUrl: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
   fileName: '',
+  fileObject: null,
   preset: 'viral_tiktok_hdr',
   resolution: '4k',
   fps: 60,
   motionMode: 'blend',
   sharpness: 0.75,
   contrast: 1.18,
+  bitrate: 55,
   bloom: true,
   codec: 'h264',
+  githubRepo: 'JackPro2121/ULTRA-HIGHER-RESOLUTION-TOOOOOL',
+  githubPat: localStorage.getItem('hyper_res_gh_pat') || '',
 };
 
 const presetConfig = {
@@ -24,13 +28,15 @@ const presetConfig = {
     bloom: true,
     fps: 60,
     resolution: '4k',
+    bitrate: 55,
   },
   velocity_flow_60fps: {
     sharpness: 0.65,
     contrast: 1.12,
     bloom: true,
-    fps: 60,
+    fps: 480,
     resolution: '4k',
+    bitrate: 65,
   },
   alight_motion_dark: {
     sharpness: 0.85,
@@ -38,6 +44,7 @@ const presetConfig = {
     bloom: true,
     fps: 60,
     resolution: '4k',
+    bitrate: 60,
   },
   cyberpunk_neon: {
     sharpness: 0.90,
@@ -45,6 +52,7 @@ const presetConfig = {
     bloom: true,
     fps: 60,
     resolution: '4k',
+    bitrate: 65,
   },
   raw_master_8k: {
     sharpness: 0.50,
@@ -52,6 +60,15 @@ const presetConfig = {
     bloom: false,
     fps: 60,
     resolution: '8k',
+    bitrate: 80,
+  },
+  extreme_phone_killer_12k: {
+    sharpness: 0.92,
+    contrast: 1.25,
+    bloom: true,
+    fps: 60,
+    resolution: '12k',
+    bitrate: 120,
   },
 };
 
@@ -98,6 +115,7 @@ function selectPreset(presetId) {
     state.bloom = conf.bloom;
     state.fps = conf.fps;
     state.resolution = conf.resolution;
+    state.bitrate = conf.bitrate;
 
     // Update controls
     document.getElementById('slider-sharpness').value = conf.sharpness;
@@ -106,9 +124,12 @@ function selectPreset(presetId) {
     document.getElementById('slider-contrast').value = conf.contrast;
     document.getElementById('val-contrast').textContent = `${conf.contrast.toFixed(2)}x`;
 
+    document.getElementById('slider-bitrate').value = conf.bitrate;
+    document.getElementById('val-bitrate').textContent = `${conf.bitrate} Mbps`;
+
     document.getElementById('toggle-bloom').checked = conf.bloom;
 
-    // Update pill buttons
+    // Update pill buttons and resolution cards
     setResolution(conf.resolution, false);
     setFps(conf.fps, false);
   }
@@ -116,23 +137,28 @@ function selectPreset(presetId) {
   updateGeneratedCommand();
 }
 
-// Control Handlers
+// Resolution Selection
 function setResolution(res, updateCmd = true) {
   state.resolution = res;
-  const container = document.getElementById('res-selector');
-  Array.from(container.children).forEach((btn) => {
-    btn.classList.toggle('active', btn.textContent.toLowerCase().includes(res));
+  document.querySelectorAll('.res-card').forEach((card) => {
+    const isTarget = card.querySelector('.res-tag').textContent.toLowerCase().includes(res);
+    card.classList.toggle('active', isTarget);
   });
+  
+  const upscaleEl = document.getElementById('spec-upscale');
+  if (upscaleEl) upscaleEl.textContent = res.toUpperCase();
+
   if (updateCmd) updateGeneratedCommand();
 }
 
+// Framerate Selection
 function setFps(fps, updateCmd = true) {
   state.fps = fps;
   const container = document.getElementById('fps-selector');
   Array.from(container.children).forEach((btn) => {
     btn.classList.toggle('active', btn.textContent.includes(fps.toString()));
   });
-  document.getElementById('preview-fps-tag').textContent = `${fps} FPS ACTIVE`;
+  document.getElementById('preview-fps-tag').textContent = `${fps} FPS FLOW`;
   if (updateCmd) updateGeneratedCommand();
 }
 
@@ -153,6 +179,9 @@ function updateParam(param, val) {
   } else if (param === 'contrast') {
     state.contrast = num;
     document.getElementById('val-contrast').textContent = `${num.toFixed(2)}x`;
+  } else if (param === 'bitrate') {
+    state.bitrate = parseInt(val, 10);
+    document.getElementById('val-bitrate').textContent = `${state.bitrate} Mbps`;
   }
   updateGeneratedCommand();
 }
@@ -165,7 +194,7 @@ function updateBloomToggle(isChecked) {
 // CLI Command Builder
 function getCliCommand() {
   const inputTarget = state.sourceType === 'url' ? state.videoUrl : (state.fileName || 'inputs/my_mobile_video.mp4');
-  let cmd = `python core/pipeline.py -i "${inputTarget}" -p ${state.preset} -r ${state.resolution} -fps ${state.fps} -m ${state.motionMode} --codec ${state.codec}`;
+  let cmd = `python core/pipeline.py -i "${inputTarget}" -p ${state.preset} -r ${state.resolution} -fps ${state.fps} -m ${state.motionMode} --bitrate ${state.bitrate} --codec ${state.codec}`;
   
   if (!state.bloom) cmd += ' --no-bloom';
   if (state.sharpness !== presetConfig[state.preset]?.sharpness) {
@@ -191,7 +220,7 @@ function copyCliCommand() {
   });
 }
 
-// Drag & Drop
+// Drag & Drop & Metadata Inspector
 function initDropzone() {
   const dropzone = document.getElementById('video-dropzone');
   const fileInput = document.getElementById('file-input');
@@ -221,11 +250,36 @@ function initDropzone() {
 }
 
 function handleFile(file) {
+  state.fileObject = file;
   state.fileName = `inputs/${file.name}`;
-  const badge = document.getElementById('uploaded-filename-badge');
-  badge.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
-  badge.style.display = 'inline-block';
-  showToast(`Loaded: ${file.name}`);
+
+  // Update Inspector Card
+  document.getElementById('spec-name').textContent = file.name;
+  const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+  const sizeText = file.size > 1024 * 1024 * 1024 
+    ? `${(file.size / (1024 * 1024 * 1024)).toFixed(2)} GB` 
+    : `${sizeMb} MB`;
+  document.getElementById('spec-size').textContent = sizeText;
+
+  // Inspect video dimensions in browser via HTML5 Video
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.onloadedmetadata = function() {
+    window.URL.revokeObjectURL(video.src);
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    const durSec = Math.round(video.duration);
+    const mins = Math.floor(durSec / 60);
+    const secs = durSec % 60;
+    const durStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    
+    document.getElementById('spec-res').textContent = `${w} x ${h}`;
+    document.getElementById('spec-dur').textContent = durStr;
+    document.getElementById('inspector-card').style.display = 'flex';
+  };
+  video.src = URL.createObjectURL(file);
+
+  showToast(`Loaded ${file.name} (${sizeText})`);
   updateGeneratedCommand();
 }
 
@@ -261,7 +315,6 @@ function initComparisonSlider() {
     isDragging = false;
   });
 
-  // Touch Support for Mobile Phones
   stage.addEventListener('touchstart', (e) => {
     isDragging = true;
     if (e.touches.length) moveSlider(e.touches[0].clientX);
@@ -277,10 +330,16 @@ function initComparisonSlider() {
   });
 }
 
-// GitHub Actions Modal & Dispatch
+// GitHub Actions Modal & Cloud Dispatch
 function openGitHubModal() {
   const modal = document.getElementById('github-modal');
   const preview = document.getElementById('dispatch-payload-preview');
+  const patInput = document.getElementById('gh-pat-input');
+  
+  const savedPat = localStorage.getItem('hyper_res_gh_pat');
+  if (savedPat && patInput) {
+    patInput.value = savedPat;
+  }
 
   const payload = {
     ref: 'main',
@@ -291,6 +350,7 @@ function openGitHubModal() {
       fps: state.fps.toString(),
       motion_mode: state.motionMode,
       sharpness: state.sharpness.toString(),
+      bitrate: state.bitrate.toString(),
       bloom: state.bloom,
       codec: state.codec,
     },
@@ -305,21 +365,16 @@ function closeGitHubModal() {
 }
 
 async function submitGitHubDispatch() {
-  const repo = document.getElementById('gh-repo-input').value.trim();
-  const pat = document.getElementById('gh-pat-input').value.trim();
+  const repo = document.getElementById('gh-repo-input').value.trim() || state.githubRepo;
+  const pat = document.getElementById('gh-pat-input').value.trim() || state.githubPat;
 
   if (!repo) {
-    alert('Please enter your GitHub Repository (e.g. username/ULTRA-HIGH-RESOLUTION-TOOL)');
+    alert('Please enter your GitHub Repository');
     return;
   }
 
-  if (!pat) {
-    // If no PAT, guide the user to GitHub's web interface or copy gh CLI command
-    const ghCmd = `gh workflow run enhance_video.yml --repo ${repo} -f preset=${state.preset} -f resolution=${state.resolution} -f fps=${state.fps} -f video_url="${state.videoUrl}"`;
-    navigator.clipboard.writeText(ghCmd);
-    alert(`No PAT provided! Copied GitHub CLI command to clipboard:\n\n${ghCmd}\n\nOr trigger directly from your repo's Actions tab.`);
-    closeGitHubModal();
-    return;
+  if (pat) {
+    localStorage.setItem('hyper_res_gh_pat', pat);
   }
 
   const btn = document.getElementById('btn-submit-dispatch');
@@ -351,8 +406,9 @@ async function submitGitHubDispatch() {
     });
 
     if (response.ok || response.status === 204) {
-      alert('🚀 Workflow successfully triggered in GitHub Actions! Check your Actions tab.');
       closeGitHubModal();
+      showToast('🚀 Workflow successfully dispatched to GitHub Actions!');
+      startLiveMonitor(repo, pat);
     } else {
       const err = await response.json().catch(() => ({ message: response.statusText }));
       alert(`Dispatch failed: ${err.message || 'Check repository and token permissions.'}`);
@@ -360,9 +416,65 @@ async function submitGitHubDispatch() {
   } catch (e) {
     alert(`Error dispatching workflow: ${e.message}`);
   } finally {
-    btn.textContent = 'Launch Cloud Enhancer 🚀';
+    btn.textContent = 'Launch Cloud Master 🚀';
     btn.disabled = false;
   }
+}
+
+// Live Run Status Tracker
+let monitorInterval = null;
+let startTime = null;
+
+function startLiveMonitor(repo, pat) {
+  const monitorCard = document.getElementById('live-monitor-card');
+  const statusText = document.getElementById('monitor-status-text');
+  const timerText = document.getElementById('monitor-timer');
+  const msgText = document.getElementById('monitor-msg');
+  const actionsEl = document.getElementById('monitor-actions');
+  const dlBtn = document.getElementById('btn-direct-download');
+
+  monitorCard.style.display = 'flex';
+  actionsEl.style.display = 'none';
+  statusText.textContent = 'Workflow Dispatched &bull; Queued...';
+  msgText.textContent = `Targeting ${state.resolution.toUpperCase()} @ ${state.fps} FPS master render on GitHub Actions.`;
+
+  startTime = Date.now();
+  if (monitorInterval) clearInterval(monitorInterval);
+
+  monitorInterval = setInterval(async () => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    timerText.textContent = `${mins}:${secs}`;
+
+    try {
+      const res = await fetch(`https://api.github.com/repos/${repo}/actions/runs?per_page=1`, {
+        headers: { 'Authorization': `Bearer ${pat}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const run = data.workflow_runs?.[0];
+        if (run) {
+          if (run.status === 'in_progress') {
+            statusText.textContent = 'Processing Master Video on Cloud...';
+          } else if (run.status === 'completed') {
+            clearInterval(monitorInterval);
+            if (run.conclusion === 'success') {
+              statusText.textContent = '✅ Master Enhancement Completed!';
+              msgText.textContent = 'Your ultra-high resolution master video is ready for download in GitHub Releases!';
+              dlBtn.href = `https://github.com/${repo}/releases`;
+              actionsEl.style.display = 'block';
+            } else {
+              statusText.textContent = '❌ Workflow Error';
+              msgText.textContent = `Job finished with status: ${run.conclusion}. Check Actions tab for logs.`;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Background poll
+    }
+  }, 6000);
 }
 
 // Toast helper

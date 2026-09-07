@@ -32,7 +32,9 @@ def build_filtergraph(
     is_portrait = input_height >= input_width
     res_key = target_resolution.lower()
     
-    if res_key == "8k":
+    if res_key == "12k":
+        base_w, base_h = (6480, 11520) if is_portrait else (11520, 6480)
+    elif res_key == "8k":
         base_w, base_h = (4320, 7680) if is_portrait else (7680, 4320)
     elif res_key == "4k":
         base_w, base_h = (2160, 3840) if is_portrait else (3840, 2160)

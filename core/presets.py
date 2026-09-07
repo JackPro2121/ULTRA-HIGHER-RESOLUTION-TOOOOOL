@@ -112,6 +112,28 @@ PRESETS = {
         "default_resolution": "8k",
         "bitrate_mbps": 80,
     },
+    "extreme_phone_killer_12k": {
+        "name": "12K Extreme Phone Killer (Max Digital Master)",
+        "description": "The absolute peak: 12K Extreme Resolution (74.6 Megapixels/frame), 120 Mbps master bitrate, razor CAS 0.92, glowing bloom, and extreme S-curve HDR. Designed to stress hardware decoders to the limit.",
+        "cas_strength": 0.92,
+        "unsharp_luma": 1.6,
+        "unsharp_chroma": 1.0,
+        "denoise_luma": 1.2,
+        "denoise_chroma": 2.5,
+        "saturation": 1.35,
+        "contrast": 1.25,
+        "brightness": 0.01,
+        "gamma": 0.94,
+        "bloom_enabled": True,
+        "bloom_threshold": 0.62,
+        "bloom_blur": 25.0,
+        "bloom_opacity": 0.40,
+        "s_curve": "0/0 0.18/0.12 0.50/0.50 0.82/0.92 1/1",
+        "motion_mode": "blend",
+        "default_fps": 60,
+        "default_resolution": "12k",
+        "bitrate_mbps": 120,
+    },
 }
 
 RESOLUTIONS = {
@@ -119,6 +141,7 @@ RESOLUTIONS = {
     "2k": {"width": 1440, "height": 2560, "label": "2K QHD (1440 x 2560)"},
     "4k": {"width": 2160, "height": 3840, "label": "4K Ultra HD (2160 x 3840)"},
     "8k": {"width": 4320, "height": 7680, "label": "8K Master (4320 x 7680)"},
+    "12k": {"width": 6480, "height": 11520, "label": "12K Extreme Master (6480 x 11520)"},
 }
 
 def get_preset(name: str) -> dict:
