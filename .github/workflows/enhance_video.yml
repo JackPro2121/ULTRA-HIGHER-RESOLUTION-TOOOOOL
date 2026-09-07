@@ -1,0 +1,166 @@
+name: "Ultra-High Resolution 8K / 60-480FPS Video Enhancer"
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: "Direct Video URL (Google Drive, Dropbox, Catbox, or direct MP4 link)"
+        required: false
+        default: ""
+      preset:
+        description: "Aesthetic Color Correction & Sharpness Preset"
+        required: true
+        type: choice
+        default: "viral_tiktok_hdr"
+        options:
+          - "viral_tiktok_hdr"
+          - "velocity_flow_60fps"
+          - "alight_motion_dark"
+          - "cyberpunk_neon"
+          - "raw_master_8k"
+      resolution:
+        description: "Target Resolution"
+        required: true
+        type: choice
+        default: "4k"
+        options:
+          - "4k"
+          - "1080p"
+          - "2k"
+          - "8k"
+      fps:
+        description: "Target Frame Rate (Motion Flow)"
+        required: true
+        type: choice
+        default: "60"
+        options:
+          - "60"
+          - "120"
+          - "30"
+      motion_mode:
+        description: "Motion Smoothing Mode"
+        required: true
+        type: choice
+        default: "blend"
+        options:
+          - "blend"
+          - "mci"
+          - "framerate"
+      sharpness:
+        description: "AMD CAS Sharpness (0.0 to 1.0, empty for preset default)"
+        required: false
+        default: ""
+      bloom:
+        description: "Enable Specular Highlight Bloom & Glow"
+        required: true
+        type: boolean
+        default: true
+      codec:
+        description: "Video Codec (h264 for mobile compatibility, h265 for extreme lag)"
+        required: true
+        type: choice
+        default: "h264"
+        options:
+          - "h264"
+          - "h265"
+
+  push:
+    paths:
+      - "inputs/*.mp4"
+      - "inputs/*.mov"
+
+permissions:
+  contents: write
+
+jobs:
+  enhance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install System Dependencies (FFmpeg with libx264/libx265)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Determine Input Video
+        id: select_input
+        run: |
+          mkdir -p inputs outputs
+          if [ -n "${{ github.event.inputs.video_url }}" ]; then
+            echo "input_source=${{ github.event.inputs.video_url }}" >> $GITHUB_OUTPUT
+          else
+            LATEST_FILE=$(ls -t inputs/*.mp4 inputs/*.mov 2>/dev/null | head -n 1)
+            if [ -n "$LATEST_FILE" ]; then
+              echo "input_source=$LATEST_FILE" >> $GITHUB_OUTPUT
+            else
+              echo "No input video found! Please provide a video_url in workflow_dispatch or commit a file to inputs/ directory."
+              exit 1
+            fi
+          fi
+
+      - name: Execute Ultra-High Resolution Enhancer
+        run: |
+          CLI_ARGS="-i '${{ steps.select_input.outputs.input_source }}'"
+          CLI_ARGS="$CLI_ARGS -o outputs/enhanced_${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}_${{ github.event.inputs.resolution || '4k' }}.mp4"
+          CLI_ARGS="$CLI_ARGS -p ${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}"
+          CLI_ARGS="$CLI_ARGS -r ${{ github.event.inputs.resolution || '4k' }}"
+          CLI_ARGS="$CLI_ARGS -fps ${{ github.event.inputs.fps || '60' }}"
+          CLI_ARGS="$CLI_ARGS -m ${{ github.event.inputs.motion_mode || 'blend' }}"
+          CLI_ARGS="$CLI_ARGS --codec ${{ github.event.inputs.codec || 'h264' }}"
+
+          if [ "${{ github.event.inputs.bloom }}" = "false" ]; then
+            CLI_ARGS="$CLI_ARGS --no-bloom"
+          fi
+
+          if [ -n "${{ github.event.inputs.sharpness }}" ]; then
+            CLI_ARGS="$CLI_ARGS --sharpness ${{ github.event.inputs.sharpness }}"
+          fi
+
+          echo "Running: python core/pipeline.py $CLI_ARGS"
+          eval python core/pipeline.py $CLI_ARGS
+
+      - name: Upload Enhanced Video as GitHub Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "Enhanced-Video-${{ github.event.inputs.resolution || '4k' }}-${{ github.event.inputs.fps || '60' }}fps"
+          path: outputs/*
+          retention-days: 14
+
+      - name: Create Release with Direct Download Asset
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/heads/')
+        with:
+          tag_name: release-${{ github.run_id }}
+          name: "TikTok 8K 60FPS Edit - Build #${{ github.run_number }}"
+          body: |
+            ## 🚀 Ultra-High Resolution Video Enhancement Complete!
+            - **Preset:** `${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}`
+            - **Resolution:** `${{ github.event.inputs.resolution || '4k' }}`
+            - **Frame Rate:** `${{ github.event.inputs.fps || '60' }} FPS`
+            - **Codec:** `${{ github.event.inputs.codec || 'h264' }}`
+            
+            Download your enhanced lag-grade masterpiece below! 👇
+          files: outputs/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Job Summary
+        run: |
+          echo "## 🎬 Video Processing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ✅ Successfully Generated" >> $GITHUB_STEP_SUMMARY
+          echo "- **Preset:** ${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resolution:** ${{ github.event.inputs.resolution || '4k' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target FPS:** ${{ github.event.inputs.fps || '60' }} FPS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files Ready in Artifacts and Releases tab!**" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+venv/
+env/
+
+# Outputs and large temporary files
+outputs/*.mp4
+outputs/*.mov
+outputs/*.mkv
+outputs/*.jpg
+!outputs/.gitkeep
+
+# Inputs (ignore downloaded user videos)
+inputs/downloaded_input.mp4
+!inputs/test_mobile_raw.mp4
+!inputs/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYPER-RES 8K // Viral TikTok Video Enhancer</title>
+  <meta name="description" content="Transform mobile footage into ultra-high quality, 8K 60-480 FPS style viral TikTok edits with AMD CAS sharpness, S-Curve HDR CC, and highlight bloom.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-background">
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="logo-area">
+        <div class="logo-badge">
+          <span class="pulse-dot"></span>
+          <span>TIKTOK 8K CC ENGINE</span>
+        </div>
+        <h1 class="main-title">HYPER-RES <span class="gradient-text">ULTRA 8K</span></h1>
+        <p class="subtitle">Convert raw mobile video into jaw-dropping, lag-inducing viral edits. AMD FidelityFX CAS &bull; S-Curve HDR &bull; Highlight Bloom &bull; 60/120 FPS Flow &bull; 100% Free on GitHub Actions</p>
+      </div>
+
+      <div class="quick-links">
+        <a href="https://colab.research.google.com" target="_blank" class="btn-ghost-sm" id="btn-open-colab">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          Free T4 GPU Colab
+        </a>
+        <a href="https://github.com" target="_blank" class="btn-ghost-sm" id="btn-github-repo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          GitHub Actions Workflow
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="dashboard-grid">
+      <!-- Left Column: Source & Visual Comparison Simulator -->
+      <section class="panel video-section">
+        <div class="panel-header">
+          <span class="panel-step">01</span>
+          <h2>Source Video & Visual Preview</h2>
+        </div>
+
+        <!-- Input Source Tabs -->
+        <div class="tabs-nav">
+          <button class="tab-btn active" id="tab-url-btn" onclick="switchTab('url')">Video URL Link</button>
+          <button class="tab-btn" id="tab-file-btn" onclick="switchTab('file')">Local File Upload</button>
+        </div>
+
+        <!-- URL Input View -->
+        <div class="tab-content active" id="tab-url-content">
+          <div class="input-group">
+            <label for="input-video-url">Video Direct URL or Google Drive Link</label>
+            <div class="url-input-wrapper">
+              <input type="url" id="input-video-url" placeholder="https://drive.google.com/file/d/... or https://domain.com/clip.mp4" value="https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4">
+              <button class="btn-primary-sm" id="btn-load-url" onclick="handleLoadUrl()">Load</button>
+            </div>
+            <p class="input-hint">Supports Google Drive, Dropbox, Discord CDN, Catbox, or direct MP4/MOV links.</p>
+          </div>
+        </div>
+
+        <!-- File Upload View -->
+        <div class="tab-content" id="tab-file-content">
+          <div class="dropzone" id="video-dropzone" onclick="document.getElementById('file-input').click()">
+            <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/x-matroska" style="display:none">
+            <div class="dropzone-icon">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <h3>Tap to choose or drag & drop video</h3>
+            <p>Mobile 4K/1080p, MP4, MOV, up to 1GB</p>
+            <span class="badge-subtle" id="uploaded-filename-badge" style="display:none"></span>
+          </div>
+        </div>
+
+        <!-- Interactive Before/After Split Comparison Preview -->
+        <div class="preview-box">
+          <div class="preview-header">
+            <div class="preview-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              <span>Live Visual Grade Simulator (Slide to compare)</span>
+            </div>
+            <span class="preview-fps-badge" id="preview-fps-tag">60 FPS ACTIVE</span>
+          </div>
+
+          <div class="comparison-stage" id="comparison-stage">
+            <!-- Simulated Background: Enhanced (Right) -->
+            <div class="stage-layer stage-after" id="stage-after">
+              <div class="simulation-card after-grade">
+                <div class="sim-inner">
+                  <div class="sim-phone-screen">
+                    <div class="sim-visual-content high-res">
+                      <div class="hdr-bloom-glow"></div>
+                      <div class="sim-elements">
+                        <div class="sim-person"></div>
+                        <div class="sim-accent-light"></div>
+                      </div>
+                      <span class="grade-label after-tag">8K HDR CC &bull; SHARP</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Simulated Foreground: Original (Left, clipped by slider) -->
+            <div class="stage-layer stage-before" id="stage-before">
+              <div class="simulation-card before-grade">
+                <div class="sim-inner">
+                  <div class="sim-phone-screen">
+                    <div class="sim-visual-content low-res">
+                      <div class="sim-elements">
+                        <div class="sim-person-raw"></div>
+                      </div>
+                      <span class="grade-label before-tag">RAW MOBILE SHOT</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Split Divider Line & Handle -->
+            <div class="split-divider" id="split-divider">
+              <div class="split-handle">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+          <p class="slider-helper">Drag slider horizontally to see AMD CAS Edge Sharpness &amp; Specular Bloom difference.</p>
+        </div>
+      </section>
+
+      <!-- Right Column: Preset Selection & Master Parameters -->
+      <section class="panel controls-section">
+        <div class="panel-header">
+          <span class="panel-step">02</span>
+          <h2>Aesthetic Grade &amp; Quality Parameters</h2>
+        </div>
+
+        <!-- Presets Selection Cards -->
+        <div class="section-label">SELECT VIRAL PRESET</div>
+        <div class="preset-cards-grid">
+          <div class="preset-card active" id="preset-viral_tiktok_hdr" onclick="selectPreset('viral_tiktok_hdr')">
+            <div class="preset-badge">VIRAL #1</div>
+            <div class="preset-title">TikTok 8K HDR</div>
+            <p class="preset-desc">Laggy phone aesthetic: deep S-curve contrast, glowing specular bloom, high CAS sharpness.</p>
+            <div class="preset-tags">
+              <span>CAS 0.75</span>
+              <span>HDR Glow</span>
+              <span>S-Curve</span>
+            </div>
+          </div>
+
+          <div class="preset-card" id="preset-velocity_flow_60fps" onclick="selectPreset('velocity_flow_60fps')">
+            <div class="preset-badge">SMOOTH</div>
+            <div class="preset-title">Velocity Flow (480 FPS)</div>
+            <p class="preset-desc">Buttery liquid motion with natural shutter motion blur and clean edge preservation.</p>
+            <div class="preset-tags">
+              <span>60/120 FPS</span>
+              <span>Motion Blur</span>
+              <span>Clean</span>
+            </div>
+          </div>
+
+          <div class="preset-card" id="preset-alight_motion_dark" onclick="selectPreset('alight_motion_dark')">
+            <div class="preset-badge">AESTHETIC</div>
+            <div class="preset-title">Alight Motion Dark</div>
+            <p class="preset-desc">Aggressive crushed blacks, saturated neon edges, high contrast. Great for anime &amp; phonk.</p>
+            <div class="preset-tags">
+              <span>Deep Blacks</span>
+              <span>CAS 0.85</span>
+              <span>Neon</span>
+            </div>
+          </div>
+
+          <div class="preset-card" id="preset-cyberpunk_neon" onclick="selectPreset('cyberpunk_neon')">
+            <div class="preset-badge">VIVID</div>
+            <div class="preset-title">Cyberpunk Neon</div>
+            <p class="preset-desc">Cold cyan shadows, warm amber highlights, extreme edge isolation, and wide bloom.</p>
+            <div class="preset-tags">
+              <span>Teal/Orange</span>
+              <span>Bloom 38%</span>
+              <span>Extreme</span>
+            </div>
+          </div>
+
+          <div class="preset-card" id="preset-raw_master_8k" onclick="selectPreset('raw_master_8k')">
+            <div class="preset-badge">STUDIO</div>
+            <div class="preset-title">Raw Master 8K</div>
+            <p class="preset-desc">True studio Lanczos upscaling with zero artificial over-saturation. 80 Mbps master bitrate.</p>
+            <div class="preset-tags">
+              <span>8K Lanczos</span>
+              <span>80 Mbps</span>
+              <span>Pure</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Master Sliders & Toggles -->
+        <div class="section-label">TUNING CONTROLS</div>
+        <div class="controls-card">
+          <!-- Resolution Selector -->
+          <div class="control-row">
+            <label>Target Resolution</label>
+            <div class="pill-selector" id="res-selector">
+              <button class="pill-btn" onclick="setResolution('1080p')">1080p</button>
+              <button class="pill-btn" onclick="setResolution('2k')">2K</button>
+              <button class="pill-btn active" onclick="setResolution('4k')">4K UHD ★</button>
+              <button class="pill-btn" onclick="setResolution('8k')">8K Master</button>
+            </div>
+          </div>
+
+          <!-- Framerate Selector -->
+          <div class="control-row">
+            <label>Target Framerate</label>
+            <div class="pill-selector" id="fps-selector">
+              <button class="pill-btn" onclick="setFps(30)">30 FPS</button>
+              <button class="pill-btn active" onclick="setFps(60)">60 FPS Flow ★</button>
+              <button class="pill-btn" onclick="setFps(120)">120 FPS</button>
+            </div>
+          </div>
+
+          <!-- CAS Sharpness Slider -->
+          <div class="control-row">
+            <div class="slider-label-row">
+              <label for="slider-sharpness">AMD FidelityFX CAS Sharpness</label>
+              <span class="slider-val" id="val-sharpness">0.75</span>
+            </div>
+            <input type="range" id="slider-sharpness" min="0" max="1" step="0.05" value="0.75" oninput="updateParam('sharpness', this.value)">
+          </div>
+
+          <!-- Contrast Slider -->
+          <div class="control-row">
+            <div class="slider-label-row">
+              <label for="slider-contrast">S-Curve Contrast Depth</label>
+              <span class="slider-val" id="val-contrast">1.18x</span>
+            </div>
+            <input type="range" id="slider-contrast" min="1.0" max="1.5" step="0.02" value="1.18" oninput="updateParam('contrast', this.value)">
+          </div>
+
+          <!-- Highlight Bloom Toggle -->
+          <div class="control-row toggle-row">
+            <div class="toggle-info">
+              <label for="toggle-bloom">Specular Highlight Bloom &amp; Glow</label>
+              <p>Adds that dreamy light flare on jewellery, eyes, and bright backgrounds</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-bloom" checked onchange="updateBloomToggle(this.checked)">
+              <span class="slider round"></span>
+            </label>
+          </div>
+
+          <!-- Codec Selector -->
+          <div class="control-row">
+            <label>Master Codec</label>
+            <div class="pill-selector" id="codec-selector">
+              <button class="pill-btn active" onclick="setCodec('h264')">H.264 (TikTok / Mobile Safe)</button>
+              <button class="pill-btn" onclick="setCodec('h265')">H.265 10-Bit (Max Lag King)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Execution & Dispatch Actions -->
+        <div class="section-label">EXECUTION ($0 BUDGET)</div>
+        <div class="action-card">
+          <div class="action-buttons">
+            <button class="btn-action-primary" id="btn-trigger-github" onclick="openGitHubModal()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>Dispatch on GitHub Actions (Free)</span>
+            </button>
+            <button class="btn-action-secondary" id="btn-copy-command" onclick="copyCliCommand()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copy FFmpeg CLI Command</span>
+            </button>
+          </div>
+
+          <!-- Generated CLI Command Preview Box -->
+          <div class="cli-command-box">
+            <span class="cli-title">GENERATED COMMAND:</span>
+            <code id="generated-cli-code">python core/pipeline.py -i "input.mp4" -p viral_tiktok_hdr -r 4k -fps 60 --codec h264</code>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- GitHub Actions Trigger Modal -->
+    <div class="modal-overlay" id="github-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <h3>Trigger 0$ Cloud Render via GitHub Actions</h3>
+          </div>
+          <button class="modal-close" onclick="closeGitHubModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">Yeh workflow directly GitHub Actions k free runners par chalega. Output file automatically GitHub Releases / Artifacts me direct download link k sath generate ho jayegi!</p>
+          
+          <div class="input-group">
+            <label for="gh-repo-input">GitHub Repository (username/repo)</label>
+            <input type="text" id="gh-repo-input" placeholder="e.g. yourname/ULTRA-HIGH-RESOLUTION-TOOL" value="">
+          </div>
+
+          <div class="input-group">
+            <label for="gh-pat-input">GitHub Personal Access Token (PAT) [Optional for 1-click web dispatch]</label>
+            <input type="password" id="gh-pat-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            <p class="input-hint">Token requires 'workflow' and 'repo' permissions. Or copy the <code>gh</code> command below.</p>
+          </div>
+
+          <div class="dispatch-summary-box">
+            <h4>WORKFLOW PAYLOAD</h4>
+            <div id="dispatch-payload-preview"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" onclick="closeGitHubModal()">Cancel</button>
+          <button class="btn-primary" id="btn-submit-dispatch" onclick="submitGitHubDispatch()">Launch Cloud Enhancer 🚀</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+      <span class="toast-msg" id="toast-msg">Command copied to clipboard!</span>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
