@@ -191,157 +191,244 @@
       <section class="panel controls-section">
         <div class="panel-header">
           <span class="panel-step">02</span>
-          <h2>Quality Selections &amp; Parameters</h2>
+          <h2>Platform Presets &amp; Pro Flexibility</h2>
         </div>
 
-        <!-- Resolution Tier Selector (Crucial: User wants MAX resolution) -->
-        <div class="section-label">MAX RESOLUTION TIER (TARGET ENHANCEMENT)</div>
-        <div class="res-cards-grid">
-          <div class="res-card" onclick="setResolution('1080p')">
-            <span class="res-tag">1080P</span>
-            <span class="res-name">Full HD</span>
-            <span class="res-mp">2.1 MP</span>
-          </div>
-          <div class="res-card" onclick="setResolution('2k')">
-            <span class="res-tag">2K</span>
-            <span class="res-name">QHD</span>
-            <span class="res-mp">3.7 MP</span>
-          </div>
-          <div class="res-card active" onclick="setResolution('4k')">
-            <span class="res-tag badge-recommended">VIRAL ★</span>
-            <span class="res-name">4K UHD</span>
-            <span class="res-mp">8.3 MP</span>
-          </div>
-          <div class="res-card" onclick="setResolution('8k')">
-            <span class="res-tag badge-extreme">MASTER</span>
-            <span class="res-name">8K Master</span>
-            <span class="res-mp">33.2 MP</span>
-          </div>
-          <div class="res-card card-12k" onclick="setResolution('12k')">
-            <span class="res-tag badge-godmode">MAX 12K 🔥</span>
-            <span class="res-name">12K Extreme</span>
-            <span class="res-mp">74.6 MP</span>
-          </div>
-        </div>
-
-        <!-- Motion & Framerate (Up to 480 FPS) -->
-        <div class="section-label">MOTION FLOW &amp; VELOCITY (UP TO 480 FPS)</div>
-        <div class="pill-selector" id="fps-selector">
-          <button class="pill-btn" onclick="setFps(30)">30 FPS Cinematic</button>
-          <button class="pill-btn active" onclick="setFps(60)">60 FPS Flow ★</button>
-          <button class="pill-btn" onclick="setFps(120)">120 FPS High-Speed</button>
-          <button class="pill-btn" onclick="setFps(240)">240 FPS Super-Mo</button>
-          <button class="pill-btn highlight-fps" onclick="setFps(480)">480 FPS Velocity Flow 🔥</button>
-        </div>
-
-        <!-- Aesthetic CC Presets Selection Cards -->
-        <div class="section-label">AESTHETIC COLOR GRADING &amp; CC PRESET</div>
-        <div class="preset-cards-grid">
-          <div class="preset-card active" id="preset-viral_tiktok_hdr" onclick="selectPreset('viral_tiktok_hdr')">
-            <div class="preset-badge">VIRAL #1</div>
-            <div class="preset-title">TikTok 8K HDR</div>
-            <p class="preset-desc">Laggy phone aesthetic: deep S-curve contrast, glowing bloom, and razor CAS 0.75 clarity.</p>
+        <!-- Section 2A: High-Quality Platform Preset Boxes (1-Click Populate) -->
+        <div class="section-label">⚡ 1-CLICK PLATFORM PRESETS (SELECT &amp; CONTINUE)</div>
+        <div class="preset-cards-grid" id="preset-container">
+          <!-- TikTok 4K 120 FPS -->
+          <div class="preset-card active" id="preset-tiktok_4k_120fps" onclick="selectPreset('tiktok_4k_120fps')">
+            <div class="preset-badge badge-tiktok">TIKTOK #1 VIRAL</div>
+            <div class="preset-title">TikTok 4K 120 FPS</div>
+            <div class="preset-specs-pill">4K UHD &bull; 120 FPS &bull; 75 Mbps &bull; H.264</div>
+            <p class="preset-desc">The signature viral laggy edit: razor CAS 0.75 sharpness, subtle highlight glow, and vivid S-curve HDR.</p>
           </div>
 
-          <div class="preset-card" id="preset-velocity_flow_60fps" onclick="selectPreset('velocity_flow_60fps')">
-            <div class="preset-badge">SMOOTH</div>
-            <div class="preset-title">Velocity 480 FPS</div>
-            <p class="preset-desc">Liquid butter motion flow with high-shutter optical blur and zero jagged frames.</p>
+          <!-- Instagram Reels Ultra HDR -->
+          <div class="preset-card" id="preset-instagram_reels_hdr" onclick="selectPreset('instagram_reels_hdr')">
+            <div class="preset-badge badge-insta">INSTA HDR POP</div>
+            <div class="preset-title">Instagram Reels 4K</div>
+            <div class="preset-specs-pill">4K UHD &bull; 60 FPS &bull; 65 Mbps &bull; H.264</div>
+            <p class="preset-desc">Vivid saturated colors, crystal micro-contrast, warm edge glow, and skin-tone perfection for mobile feeds.</p>
           </div>
 
+          <!-- Indoor & Low-Light Savior -->
+          <div class="preset-card" id="preset-low_light_indoor_fix" onclick="selectPreset('low_light_indoor_fix')">
+            <div class="preset-badge badge-night">NIGHT &amp; BUS FIX 🌙</div>
+            <div class="preset-title">Indoor / Low-Light Fix</div>
+            <div class="preset-specs-pill">4K UHD &bull; 60 FPS &bull; Heavy Denoise &bull; Lifted Shadows</div>
+            <p class="preset-desc">Engineered for dark rooms and bus interiors: zero digital grain, lifted shadows, and protected lights.</p>
+          </div>
+
+          <!-- Velocity Flow 480 FPS -->
+          <div class="preset-card" id="preset-velocity_flow_480fps" onclick="selectPreset('velocity_flow_480fps')">
+            <div class="preset-badge badge-velocity">480 FPS FLOW 🔥</div>
+            <div class="preset-title">Velocity Flow 480 FPS</div>
+            <div class="preset-specs-pill">4K UHD &bull; 480 FPS &bull; 80 Mbps &bull; Shutter Blur</div>
+            <p class="preset-desc">Liquid butter smooth motion with 480 FPS temporal blending and natural high-shutter blur.</p>
+          </div>
+
+          <!-- YouTube Shorts 8K -->
+          <div class="preset-card" id="preset-youtube_shorts_8k" onclick="selectPreset('youtube_shorts_8k')">
+            <div class="preset-badge badge-studio">8K MASTER</div>
+            <div class="preset-title">YouTube Shorts 8K</div>
+            <div class="preset-specs-pill">8K Master &bull; 60 FPS &bull; 95 Mbps &bull; H.264</div>
+            <p class="preset-desc">Pristine 8K (4320x7680) studio upscaling with zero artificial noise and pure edge detail.</p>
+          </div>
+
+          <!-- Alight Motion Dark CC -->
           <div class="preset-card" id="preset-alight_motion_dark" onclick="selectPreset('alight_motion_dark')">
-            <div class="preset-badge">AESTHETIC</div>
+            <div class="preset-badge badge-dark">DARK PHONK CC</div>
             <div class="preset-title">Alight Motion Dark</div>
-            <p class="preset-desc">Aggressive crushed blacks, saturated neon edges, high contrast. Great for phonk &amp; anime.</p>
+            <div class="preset-specs-pill">4K UHD &bull; 60 FPS &bull; 60 Mbps &bull; Crushed Blacks</div>
+            <p class="preset-desc">Aggressive crushed blacks, saturated neon edges, and punchy pop. Favored by phonk &amp; anime editors.</p>
           </div>
 
+          <!-- Cyberpunk Neon -->
           <div class="preset-card" id="preset-cyberpunk_neon" onclick="selectPreset('cyberpunk_neon')">
-            <div class="preset-badge">VIVID</div>
+            <div class="preset-badge badge-neon">CYBERPUNK GLOW</div>
             <div class="preset-title">Cyberpunk Neon</div>
-            <p class="preset-desc">Cyan shadows, warm amber highlights, extreme edge isolation, and wide light bloom.</p>
+            <div class="preset-specs-pill">4K UHD &bull; 60 FPS &bull; 65 Mbps &bull; Cyan/Amber</div>
+            <p class="preset-desc">Deep cyan shadows, warm amber highlights, extreme edge isolation, and wide light bloom.</p>
           </div>
 
-          <div class="preset-card" id="preset-raw_master_8k" onclick="selectPreset('raw_master_8k')">
-            <div class="preset-badge">STUDIO</div>
-            <div class="preset-title">Raw Master 8K</div>
-            <p class="preset-desc">Pristine studio Lanczos upscaling with zero artificial over-saturation. 80 Mbps master.</p>
-          </div>
-
+          <!-- 12K Extreme Phone Killer -->
           <div class="preset-card card-extreme" id="preset-extreme_phone_killer_12k" onclick="selectPreset('extreme_phone_killer_12k')">
-            <div class="preset-badge badge-kill">MAX KILLER 🔥</div>
-            <div class="preset-title">12K Phone Killer</div>
-            <p class="preset-desc">74.6 MP 12K scale @ 120 Mbps master bitrate. Designed to stress hardware decoders to the limit.</p>
+            <div class="preset-badge badge-kill">BENCHMARK ONLY ⚠️</div>
+            <div class="preset-title">12K Benchmark Master</div>
+            <div class="preset-specs-pill">12K (74.6 MP) &bull; 120 Mbps &bull; H.265</div>
+            <p class="preset-desc">Stresses hardware decoders to the absolute limit. (Requires 8K/12K Workstation GPU to play).</p>
           </div>
         </div>
 
-        <!-- Master Sliders & Toggles -->
-        <div class="section-label">FINE-TUNING CONTROLS</div>
-        <div class="controls-card">
-          <!-- CAS Sharpness Slider -->
-          <div class="control-row">
-            <div class="slider-label-row">
-              <label for="slider-sharpness">AMD FidelityFX CAS Sharpness (Zero-Halo)</label>
-              <span class="slider-val" id="val-sharpness">0.75</span>
-            </div>
-            <input type="range" id="slider-sharpness" min="0" max="1" step="0.05" value="0.75" oninput="updateParam('sharpness', this.value)">
+        <!-- Quick Continue & Action Bar -->
+        <div class="continue-bar" id="continue-bar">
+          <div class="continue-info">
+            <span class="continue-label">ACTIVE SELECTION:</span>
+            <span class="continue-preset-name" id="continue-preset-name">TikTok 4K 120 FPS</span>
+            <span class="continue-badge" id="continue-specs-badge">4K &bull; 120 FPS &bull; 75 Mbps &bull; H.264</span>
           </div>
-
-          <!-- Contrast Slider -->
-          <div class="control-row">
-            <div class="slider-label-row">
-              <label for="slider-contrast">S-Curve Contrast Multiplier</label>
-              <span class="slider-val" id="val-contrast">1.18x</span>
-            </div>
-            <input type="range" id="slider-contrast" min="1.0" max="1.5" step="0.02" value="1.18" oninput="updateParam('contrast', this.value)">
-          </div>
-
-          <!-- Bitrate Slider (Crucial for Lag Effect) -->
-          <div class="control-row">
-            <div class="slider-label-row">
-              <label for="slider-bitrate">Master Bitrate (The "Lag Secret")</label>
-              <span class="slider-val highlight" id="val-bitrate">55 Mbps</span>
-            </div>
-            <input type="range" id="slider-bitrate" min="20" max="150" step="5" value="55" oninput="updateParam('bitrate', this.value)">
-            <p class="input-hint">Higher bitrate (60-120 Mbps) causes weak phone decoders to choke and lag while viewing.</p>
-          </div>
-
-          <!-- Highlight Bloom Toggle -->
-          <div class="control-row toggle-row">
-            <div class="toggle-info">
-              <label for="toggle-bloom">Specular Highlight Bloom &amp; Glow</label>
-              <p>Adds glowing flare on jewellery, eyes, and bright backgrounds</p>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-bloom" checked onchange="updateBloomToggle(this.checked)">
-              <span class="slider round"></span>
-            </label>
-          </div>
-
-          <!-- Codec Selector -->
-          <div class="control-row">
-            <label>Master Codec</label>
-            <div class="pill-selector" id="codec-selector">
-              <button class="pill-btn active" onclick="setCodec('h264')">H.264 (Universal TikTok / Mobile Safe)</button>
-              <button class="pill-btn" onclick="setCodec('h265')">H.265 10-Bit HEVC (Max Decoder Stress)</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Live Cloud Monitor & Action Card -->
-        <div class="section-label">CLOUD DISPATCH ($0 BUDGET) &bull; LIVE TRACKER</div>
-        <div class="action-card">
-          <div class="action-buttons">
-            <button class="btn-action-primary" id="btn-trigger-github" onclick="openGitHubModal()">
+          <div class="continue-actions">
+            <button class="btn-action-primary pulse" id="btn-trigger-github" onclick="openGitHubModal()">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              <span>Dispatch on GitHub Actions ($0 Free)</span>
+              <span>Continue &amp; Render on GitHub Actions ($0)</span>
             </button>
             <button class="btn-action-local" id="btn-run-local" onclick="runLocally()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              <span>Run on Local PC Engine</span>
+              <span>Render Locally</span>
             </button>
-            <button class="btn-action-secondary" id="btn-copy-command" onclick="copyCliCommand()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span>Copy CLI</span>
+          </div>
+        </div>
+
+        <!-- Section 2B: Full Flexibility Pro Controls -->
+        <div class="section-label-collapsible" onclick="toggleProControls()">
+          <div class="label-left">
+            <span>🎛️ PRO STUDIO FLEXIBILITY (CUSTOMIZE ANY PARAMETER)</span>
+          </div>
+          <span class="collapsible-icon" id="pro-controls-icon">&#9660;</span>
+        </div>
+
+        <div class="pro-controls-container" id="pro-controls-container">
+          <!-- Resolution Tier Selector -->
+          <div class="control-group-title">1. TARGET RESOLUTION TIER</div>
+          <div class="res-cards-grid">
+            <div class="res-card" onclick="setResolution('1080p')">
+              <span class="res-tag">1080P</span>
+              <span class="res-name">Full HD</span>
+              <span class="res-mp">2.1 MP</span>
+            </div>
+            <div class="res-card" onclick="setResolution('2k')">
+              <span class="res-tag">2K</span>
+              <span class="res-name">QHD</span>
+              <span class="res-mp">3.7 MP</span>
+            </div>
+            <div class="res-card active" onclick="setResolution('4k')">
+              <span class="res-tag badge-recommended">VIRAL ★</span>
+              <span class="res-name">4K UHD</span>
+              <span class="res-mp">8.3 MP</span>
+            </div>
+            <div class="res-card" onclick="setResolution('8k')">
+              <span class="res-tag badge-extreme">MASTER</span>
+              <span class="res-name">8K Master</span>
+              <span class="res-mp">33.2 MP</span>
+            </div>
+            <div class="res-card card-12k" onclick="setResolution('12k')">
+              <span class="res-tag badge-godmode">BENCHMARK ⚠️</span>
+              <span class="res-name">12K Extreme</span>
+              <span class="res-mp">74.6 MP</span>
+            </div>
+          </div>
+
+          <!-- Framerate Selector -->
+          <div class="control-group-title">2. MOTION FRAMERATE</div>
+          <div class="pill-selector" id="fps-selector">
+            <button class="pill-btn" onclick="setFps(30)">30 FPS Cinematic</button>
+            <button class="pill-btn" onclick="setFps(60)">60 FPS Flow ★</button>
+            <button class="pill-btn active" onclick="setFps(120)">120 FPS High-Speed 🔥</button>
+            <button class="pill-btn" onclick="setFps(240)">240 FPS Super-Mo</button>
+            <button class="pill-btn highlight-fps" onclick="setFps(480)">480 FPS Velocity Flow</button>
+          </div>
+
+          <!-- Codec Selector -->
+          <div class="control-group-title">3. MASTER CODEC</div>
+          <div class="pill-selector" id="codec-selector">
+            <button class="pill-btn active" onclick="setCodec('h264')">H.264 (Universal Safe &bull; 100% Mobile &amp; VLC Playable ★)</button>
+            <button class="pill-btn" onclick="setCodec('h265')">H.265 10-Bit HEVC (Master &bull; Requires Heavy GPU Decoder)</button>
+          </div>
+
+          <!-- Sliders Grid -->
+          <div class="control-group-title">4. FINE-TUNING SLIDERS</div>
+          <div class="controls-card">
+            <!-- CAS Sharpness Slider -->
+            <div class="control-row">
+              <div class="slider-label-row">
+                <label for="slider-sharpness">AMD FidelityFX CAS Sharpness (Zero-Halo)</label>
+                <span class="slider-val" id="val-sharpness">0.75</span>
+              </div>
+              <input type="range" id="slider-sharpness" min="0" max="1" step="0.05" value="0.75" oninput="updateParam('sharpness', this.value)">
+            </div>
+
+            <!-- Contrast Slider -->
+            <div class="control-row">
+              <div class="slider-label-row">
+                <label for="slider-contrast">S-Curve Dynamic Contrast Multiplier</label>
+                <span class="slider-val" id="val-contrast">1.16x</span>
+              </div>
+              <input type="range" id="slider-contrast" min="0.90" max="1.45" step="0.02" value="1.16" oninput="updateParam('contrast', this.value)">
+            </div>
+
+            <!-- Saturation Slider (NEW) -->
+            <div class="control-row">
+              <div class="slider-label-row">
+                <label for="slider-saturation">Color Saturation &amp; Vibrance</label>
+                <span class="slider-val" id="val-saturation">1.25x</span>
+              </div>
+              <input type="range" id="slider-saturation" min="0.80" max="1.70" step="0.05" value="1.25" oninput="updateParam('saturation', this.value)">
+            </div>
+
+            <!-- Shadow Lift / Exposure Slider (NEW) -->
+            <div class="control-row">
+              <div class="slider-label-row">
+                <label for="slider-brightness">Shadow Lift / Exposure (Indoor / Night Savior)</label>
+                <span class="slider-val" id="val-brightness">+0.01</span>
+              </div>
+              <input type="range" id="slider-brightness" min="-0.08" max="0.10" step="0.01" value="0.01" oninput="updateParam('brightness', this.value)">
+            </div>
+
+            <!-- Bitrate Slider -->
+            <div class="control-row">
+              <div class="slider-label-row">
+                <label for="slider-bitrate">Master Bitrate (The "Lag Secret")</label>
+                <span class="slider-val highlight" id="val-bitrate">75 Mbps</span>
+              </div>
+              <input type="range" id="slider-bitrate" min="20" max="150" step="5" value="75" oninput="updateParam('bitrate', this.value)">
+              <p class="input-hint">65-85 Mbps gives that buttery, crystal-crisp heavy data stream that defines top viral edits.</p>
+            </div>
+
+            <!-- Denoise Level Selector (NEW) -->
+            <div class="control-row">
+              <label>Temporal Denoise Filter</label>
+              <div class="pill-selector-sm" id="denoise-selector">
+                <button class="pill-btn-sm" onclick="setDenoise(0.8)">Mild (0.8)</button>
+                <button class="pill-btn-sm active" onclick="setDenoise(1.5)">Balanced (1.5 ★)</button>
+                <button class="pill-btn-sm" onclick="setDenoise(2.6)">Heavy Night / Bus (2.6 🌙)</button>
+              </div>
+            </div>
+
+            <!-- Highlight Bloom Toggle -->
+            <div class="control-row toggle-row">
+              <div class="toggle-info">
+                <label for="toggle-bloom">Specular Highlight Bloom &amp; Glow</label>
+                <p>Adds glowing flare on jewellery, lights, and reflections</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="toggle-bloom" checked onchange="updateBloomToggle(this.checked)">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generated Command Snippet -->
+        <div class="code-preview-box">
+          <div class="code-header">
+            <span>EXECUTABLE PIPELINE COMMAND</span>
+            <button class="btn-copy-code" onclick="copyCliCommand()">Copy</button>
+          </div>
+          <pre id="generated-command">python core/pipeline.py -i "inputs/video.mp4" -p tiktok_4k_120fps -r 4k -fps 120 --bitrate 75 --codec h264</pre>
+        </div>
+
+        <!-- Action Card -->
+        <div class="action-card">
+          <div class="action-buttons">
+            <button class="btn-action-primary" id="btn-trigger-github-sec" onclick="openGitHubModal()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>Dispatch on GitHub Actions ($0 Cloud)</span>
+            </button>
+            <button class="btn-action-local" id="btn-run-local-sec" onclick="runLocally()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span>Run on Local PC</span>
             </button>
           </div>
 

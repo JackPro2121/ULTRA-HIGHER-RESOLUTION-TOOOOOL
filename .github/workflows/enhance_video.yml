@@ -13,6 +13,11 @@ on:
         type: choice
         default: "viral_tiktok_hdr"
         options:
+          - "tiktok_4k_120fps"
+          - "instagram_reels_hdr"
+          - "low_light_indoor_fix"
+          - "velocity_flow_480fps"
+          - "youtube_shorts_8k"
           - "viral_tiktok_hdr"
           - "velocity_flow_60fps"
           - "alight_motion_dark"

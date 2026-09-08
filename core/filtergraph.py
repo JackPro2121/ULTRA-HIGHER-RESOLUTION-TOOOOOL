@@ -24,6 +24,9 @@ def build_filtergraph(
     cas_override: Optional[float] = None,
     contrast_override: Optional[float] = None,
     saturation_override: Optional[float] = None,
+    brightness_override: Optional[float] = None,
+    gamma_override: Optional[float] = None,
+    denoise_override: Optional[float] = None,
 ) -> Tuple[str, int, int]:
     """
     Build a complete FFmpeg filtergraph string and return (filtergraph_str, out_w, out_h).
@@ -50,17 +53,18 @@ def build_filtergraph(
         f"setsar=1"
     )
 
-    # Parameters
+    # Parameters with overrides
     cas_strength = cas_override if cas_override is not None else preset.get("cas_strength", 0.75)
     unsharp_luma = preset.get("unsharp_luma", 1.2)
     unsharp_chroma = preset.get("unsharp_chroma", 0.8)
-    denoise_luma = preset.get("denoise_luma", 1.5)
-    denoise_chroma = preset.get("denoise_chroma", 3.0)
+    
+    denoise_luma = denoise_override if denoise_override is not None else preset.get("denoise_luma", 1.5)
+    denoise_chroma = (denoise_luma * 2.0) if denoise_override is not None else preset.get("denoise_chroma", 3.0)
     
     contrast = contrast_override if contrast_override is not None else preset.get("contrast", 1.18)
     saturation = saturation_override if saturation_override is not None else preset.get("saturation", 1.25)
-    brightness = preset.get("brightness", 0.01)
-    gamma = preset.get("gamma", 0.96)
+    brightness = brightness_override if brightness_override is not None else preset.get("brightness", 0.01)
+    gamma = gamma_override if gamma_override is not None else preset.get("gamma", 0.96)
     s_curve = preset.get("s_curve", "0/0 0.22/0.16 0.50/0.50 0.78/0.86 1/1")
 
     # Step-by-step filter assembly

@@ -173,7 +173,6 @@ def generate_comparison_image(original_video: str, enhanced_video: str, output_i
         print(f"[WARN] Failed to generate comparison snapshot ({e}). Skipping.", file=sys.stderr)
 
 
-
 def enhance_video(
     input_path: str,
     output_path: str,
@@ -185,6 +184,9 @@ def enhance_video(
     cas_override: Optional[float] = None,
     contrast_override: Optional[float] = None,
     saturation_override: Optional[float] = None,
+    brightness_override: Optional[float] = None,
+    gamma_override: Optional[float] = None,
+    denoise_override: Optional[float] = None,
     bitrate_override: Optional[int] = None,
     codec: str = "h264",
     generate_comparison: bool = True,
@@ -215,8 +217,10 @@ def enhance_video(
     print(f" Target Res  : {resolution.upper()}")
     print(f" Target FPS  : {target_fps} FPS (Mode: {motion_mode})")
 
-    bitrate_mbps = bitrate_override if bitrate_override is not None else preset.get("bitrate_mbps", 55)
-    print(f" Codec       : {codec.upper()} Master Bitrate: {bitrate_mbps} Mbps")
+    # Use preset codec if not explicitly given or default
+    final_codec = codec or preset.get("codec", "h264")
+    bitrate_mbps = bitrate_override if bitrate_override is not None else preset.get("bitrate_mbps", 65)
+    print(f" Codec       : {final_codec.upper()} Master Bitrate: {bitrate_mbps} Mbps")
 
     # Build Complex Filtergraph
     filtergraph_str, out_w, out_h = build_filtergraph(
@@ -230,6 +234,9 @@ def enhance_video(
         cas_override=cas_override,
         contrast_override=contrast_override,
         saturation_override=saturation_override,
+        brightness_override=brightness_override,
+        gamma_override=gamma_override,
+        denoise_override=denoise_override,
     )
 
     # FFmpeg Command Assembly
@@ -239,7 +246,7 @@ def enhance_video(
     cmd.extend(["-map", "0:a?", "-c:a", "aac", "-b:a", "320k"])
 
     # Video Codec settings
-    if codec.lower() in ["h265", "hevc"]:
+    if final_codec.lower() in ["h265", "hevc"]:
         cmd.extend([
             "-c:v", "libx265",
             "-preset", "medium",
@@ -267,34 +274,42 @@ def enhance_video(
     print("\n[*] Running FFmpeg Master Enhancement Pipeline...")
     start_time = time.time()
     
-    proc = subprocess.run(cmd, text=True, capture_output=True)
-    elapsed = time.time() - start_time
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+        )
 
-    if proc.returncode != 0:
-        print("[ERROR] FFmpeg pipeline failed!", file=sys.stderr)
-        print("--- FFmpeg stderr output ---", file=sys.stderr)
-        print(proc.stderr, file=sys.stderr)
+        for line in proc.stdout:
+            # Print frame progress if available
+            line_str = line.strip()
+            if "frame=" in line_str or "fps=" in line_str or "time=" in line_str:
+                print(f"\r{line_str}", end="", flush=True)
+            elif "error" in line_str.lower():
+                print(f"\n[FFMPEG] {line_str}", file=sys.stderr)
+
+        proc.wait()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, cmd)
+
+    except Exception as e:
+        print(f"\n[ERROR] FFmpeg rendering failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    out_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-    print("\n" + "=" * 65)
-    print(" ✅ PROCESSING COMPLETED SUCCESSFULLY!")
-    print("=" * 65)
-    print(f" Output File : {output_path}")
-    print(f" File Size   : {out_size_mb:.2f} MB")
-    print(f" Dimensions  : {out_w}x{out_h}")
-    print(f" Frame Rate  : {target_fps} FPS")
-    print(f" Total Time  : {elapsed:.2f} seconds")
-    print("=" * 65)
+    elapsed = time.time() - start_time
+    print(f"\n\n[✓] Enhancement Complete in {elapsed:.1f}s!")
+    print(f"[✓] Master Output Saved: {output_path} ({os.path.getsize(output_path) / 1024 / 1024:.2f} MB)")
 
-    # Generate Comparison Image if requested
+    # Generate Comparison Image
     if generate_comparison:
-        comp_path = os.path.splitext(output_path)[0] + "_comparison.jpg"
-        generate_comparison_image(local_input, output_path, comp_path)
+        comp_img = os.path.splitext(output_path)[0] + "_comparison.jpg"
+        generate_comparison_image(local_input, output_path, comp_img)
 
     return {
-        "output_path": output_path,
-        "size_mb": out_size_mb,
+        "output_video": output_path,
         "width": out_w,
         "height": out_h,
         "fps": target_fps,
@@ -318,7 +333,7 @@ def main():
         "-r", "--resolution",
         default="4k",
         choices=list(RESOLUTIONS.keys()),
-        help="Target resolution (1080p, 2k, 4k, 8k)"
+        help="Target resolution (1080p, 2k, 4k, 8k, 12k)"
     )
     parser.add_argument(
         "-fps", "--fps",
@@ -336,6 +351,9 @@ def main():
     parser.add_argument("--sharpness", type=float, default=None, help="Override CAS sharpness strength (0.0 to 1.0)")
     parser.add_argument("--contrast", type=float, default=None, help="Override contrast factor (e.g. 1.15)")
     parser.add_argument("--saturation", type=float, default=None, help="Override saturation factor (e.g. 1.25)")
+    parser.add_argument("--brightness", type=float, default=None, help="Override brightness offset (e.g. 0.02)")
+    parser.add_argument("--gamma", type=float, default=None, help="Override gamma factor (e.g. 1.05)")
+    parser.add_argument("--denoise", type=float, default=None, help="Override denoise strength (e.g. 2.0)")
     parser.add_argument("--bitrate", type=int, default=None, help="Override export bitrate in Mbps (e.g. 80, 120)")
     parser.add_argument("--codec", default="h264", choices=["h264", "h265"], help="Video codec (h264 or h265)")
     parser.add_argument("--no-comparison", action="store_true", help="Skip generating before/after comparison image")
@@ -353,6 +371,9 @@ def main():
         cas_override=args.sharpness,
         contrast_override=args.contrast,
         saturation_override=args.saturation,
+        brightness_override=args.brightness,
+        gamma_override=args.gamma,
+        denoise_override=args.denoise,
         bitrate_override=args.bitrate,
         codec=args.codec,
         generate_comparison=not args.no_comparison,

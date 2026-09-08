@@ -679,34 +679,262 @@ body {
   box-shadow: 0 0 25px rgba(255, 84, 0, 0.3);
 }
 
-.preset-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  color: var(--neon-gold);
-  background: rgba(255, 209, 102, 0.15);
-  padding: 2px 6px;
+.preset-specs-pill {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--tiktok-cyan);
+  background: rgba(37, 244, 238, 0.08);
+  border: 1px solid rgba(37, 244, 238, 0.2);
   border-radius: 4px;
+  padding: 3px 6px;
+  margin-bottom: 0.45rem;
+  display: inline-block;
+  letter-spacing: -0.02em;
 }
 
-.badge-kill {
-  color: var(--godmode-orange);
-  background: rgba(255, 84, 0, 0.18);
+.preset-card.active .preset-specs-pill {
+  background: rgba(37, 244, 238, 0.16);
+  border-color: rgba(37, 244, 238, 0.4);
 }
 
-.preset-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 0.35rem;
-  margin-top: 0.35rem;
+.badge-tiktok {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(37, 244, 238, 0.35), rgba(254, 44, 85, 0.35));
+  border: 1px solid rgba(37, 244, 238, 0.3);
 }
 
-.preset-desc {
+.badge-insta {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.35), rgba(253, 29, 29, 0.35));
+  border: 1px solid rgba(225, 48, 108, 0.3);
+}
+
+.badge-night {
+  color: #ffeaa7;
+  background: rgba(108, 92, 231, 0.3);
+  border: 1px solid rgba(108, 92, 231, 0.4);
+}
+
+.badge-velocity {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255, 118, 117, 0.35), rgba(214, 48, 49, 0.35));
+  border: 1px solid rgba(255, 118, 117, 0.3);
+}
+
+.badge-studio {
+  color: #dfe6e9;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.badge-dark {
+  color: #a29bfe;
+  background: rgba(162, 155, 254, 0.18);
+  border: 1px solid rgba(162, 155, 254, 0.3);
+}
+
+.badge-neon {
+  color: #00cec9;
+  background: rgba(0, 206, 201, 0.18);
+  border: 1px solid rgba(0, 206, 201, 0.3);
+}
+
+/* Quick Continue & Action Bar */
+.continue-bar {
+  background: linear-gradient(135deg, rgba(20, 24, 38, 0.95), rgba(12, 15, 25, 0.95));
+  border: 1px solid rgba(37, 244, 238, 0.3);
+  border-radius: var(--radius-md);
+  padding: 1.1rem 1.35rem;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(37, 244, 238, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.continue-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--tiktok-cyan), var(--tiktok-red));
+}
+
+.continue-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.continue-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.continue-preset-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.continue-badge {
+  font-family: 'Space Grotesk', monospace;
   font-size: 0.75rem;
+  color: var(--tiktok-cyan);
+}
+
+.continue-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-action-primary.pulse {
+  animation: pulseGlow 2.5s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(37, 244, 238, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(37, 244, 238, 0.6);
+  }
+}
+
+/* Collapsible Pro Controls Section */
+.section-label-collapsible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-top: 0.75rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
   color: var(--text-secondary);
-  line-height: 1.4;
+  transition: var(--transition-smooth);
+}
+
+.section-label-collapsible:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.collapsible-icon {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.collapsible-icon.rotated {
+  transform: rotate(-90deg);
+}
+
+.pro-controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.control-group-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+/* Small Pill Selectors */
+.pill-selector-sm {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pill-btn-sm {
+  background: rgba(12, 14, 22, 0.6);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.pill-btn-sm:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.pill-btn-sm.active {
+  background: rgba(37, 244, 238, 0.15);
+  border-color: var(--tiktok-cyan);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(37, 244, 238, 0.25);
+}
+
+/* Code Preview Box */
+.code-preview-box {
+  background: #080a10;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.btn-copy-code {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-copy-code:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.code-preview-box pre {
+  font-family: 'Space Grotesk', monospace;
+  font-size: 0.75rem;
+  color: #a0aec0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
 }
 
 /* Controls Card */

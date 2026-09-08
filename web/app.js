@@ -8,13 +8,16 @@ const state = {
   videoUrl: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
   fileName: '',
   fileObject: null,
-  preset: 'viral_tiktok_hdr',
+  preset: 'tiktok_4k_120fps',
   resolution: '4k',
-  fps: 60,
+  fps: 120,
   motionMode: 'blend',
   sharpness: 0.75,
-  contrast: 1.18,
-  bitrate: 55,
+  contrast: 1.16,
+  saturation: 1.25,
+  brightness: 0.01,
+  denoise: 1.5,
+  bitrate: 75,
   bloom: true,
   codec: 'h264',
   githubRepo: 'JackPro2121/ULTRA-HIGHER-RESOLUTION-TOOOOOL',
@@ -22,53 +25,117 @@ const state = {
 };
 
 const presetConfig = {
-  viral_tiktok_hdr: {
+  tiktok_4k_120fps: {
+    title: 'TikTok 4K 120 FPS',
+    specs: '4K UHD • 120 FPS • 75 Mbps • H.264',
     sharpness: 0.75,
-    contrast: 1.18,
+    contrast: 1.16,
+    saturation: 1.25,
+    brightness: 0.01,
+    denoise: 1.5,
+    bloom: true,
+    fps: 120,
+    resolution: '4k',
+    bitrate: 75,
+    codec: 'h264',
+  },
+  instagram_reels_hdr: {
+    title: 'Instagram Reels 4K HDR',
+    specs: '4K UHD • 60 FPS • 65 Mbps • H.264',
+    sharpness: 0.80,
+    contrast: 1.20,
+    saturation: 1.32,
+    brightness: 0.01,
+    denoise: 1.4,
     bloom: true,
     fps: 60,
     resolution: '4k',
-    bitrate: 55,
+    bitrate: 65,
+    codec: 'h264',
   },
-  velocity_flow_60fps: {
-    sharpness: 0.65,
-    contrast: 1.12,
+  low_light_indoor_fix: {
+    title: 'Indoor / Low-Light Fix',
+    specs: '4K UHD • 60 FPS • Heavy Denoise • Lifted Shadows',
+    sharpness: 0.60,
+    contrast: 1.08,
+    saturation: 1.15,
+    brightness: 0.02,
+    denoise: 2.6,
+    bloom: true,
+    fps: 60,
+    resolution: '4k',
+    bitrate: 65,
+    codec: 'h264',
+  },
+  velocity_flow_480fps: {
+    title: 'Velocity Flow 480 FPS',
+    specs: '4K UHD • 480 FPS • 80 Mbps • Shutter Blur',
+    sharpness: 0.70,
+    contrast: 1.14,
+    saturation: 1.20,
+    brightness: 0.00,
+    denoise: 1.8,
     bloom: true,
     fps: 480,
     resolution: '4k',
-    bitrate: 65,
+    bitrate: 80,
+    codec: 'h264',
+  },
+  youtube_shorts_8k: {
+    title: 'YouTube Shorts 8K',
+    specs: '8K Master • 60 FPS • 95 Mbps • H.264',
+    sharpness: 0.55,
+    contrast: 1.10,
+    saturation: 1.12,
+    brightness: 0.00,
+    denoise: 1.2,
+    bloom: false,
+    fps: 60,
+    resolution: '8k',
+    bitrate: 95,
+    codec: 'h264',
   },
   alight_motion_dark: {
+    title: 'Alight Motion Dark',
+    specs: '4K UHD • 60 FPS • 60 Mbps • Crushed Blacks',
     sharpness: 0.85,
     contrast: 1.25,
+    saturation: 1.35,
+    brightness: -0.02,
+    denoise: 1.2,
     bloom: true,
     fps: 60,
     resolution: '4k',
     bitrate: 60,
+    codec: 'h264',
   },
   cyberpunk_neon: {
+    title: 'Cyberpunk Neon',
+    specs: '4K UHD • 60 FPS • 65 Mbps • Cyan/Amber',
     sharpness: 0.90,
     contrast: 1.22,
+    saturation: 1.30,
+    brightness: 0.01,
+    denoise: 1.5,
     bloom: true,
     fps: 60,
     resolution: '4k',
     bitrate: 65,
-  },
-  raw_master_8k: {
-    sharpness: 0.50,
-    contrast: 1.06,
-    bloom: false,
-    fps: 60,
-    resolution: '8k',
-    bitrate: 80,
+    codec: 'h264',
   },
   extreme_phone_killer_12k: {
+    title: '12K Benchmark Master',
+    specs: '12K (74.6 MP) • 120 Mbps • H.265 Master',
     sharpness: 0.92,
     contrast: 1.25,
+    saturation: 1.35,
+    brightness: 0.01,
+    denoise: 1.2,
     bloom: true,
     fps: 60,
     resolution: '12k',
     bitrate: 120,
+    codec: 'h265',
   },
 };
 
@@ -76,6 +143,7 @@ const presetConfig = {
 document.addEventListener('DOMContentLoaded', () => {
   initComparisonSlider();
   initDropzone();
+  selectPreset('tiktok_4k_120fps');
   updateGeneratedCommand();
 });
 
@@ -112,29 +180,86 @@ function selectPreset(presetId) {
   if (conf) {
     state.sharpness = conf.sharpness;
     state.contrast = conf.contrast;
+    state.saturation = conf.saturation;
+    state.brightness = conf.brightness;
+    state.denoise = conf.denoise;
     state.bloom = conf.bloom;
     state.fps = conf.fps;
     state.resolution = conf.resolution;
     state.bitrate = conf.bitrate;
+    state.codec = conf.codec;
 
-    // Update controls
-    document.getElementById('slider-sharpness').value = conf.sharpness;
-    document.getElementById('val-sharpness').textContent = conf.sharpness.toFixed(2);
+    // Update Quick Continue bar
+    const nameEl = document.getElementById('continue-preset-name');
+    const badgeEl = document.getElementById('continue-specs-badge');
+    if (nameEl) nameEl.textContent = conf.title;
+    if (badgeEl) badgeEl.textContent = conf.specs;
 
-    document.getElementById('slider-contrast').value = conf.contrast;
-    document.getElementById('val-contrast').textContent = `${conf.contrast.toFixed(2)}x`;
+    // Update sliders
+    const sSharp = document.getElementById('slider-sharpness');
+    if (sSharp) {
+      sSharp.value = conf.sharpness;
+      document.getElementById('val-sharpness').textContent = conf.sharpness.toFixed(2);
+    }
 
-    document.getElementById('slider-bitrate').value = conf.bitrate;
-    document.getElementById('val-bitrate').textContent = `${conf.bitrate} Mbps`;
+    const sContrast = document.getElementById('slider-contrast');
+    if (sContrast) {
+      sContrast.value = conf.contrast;
+      document.getElementById('val-contrast').textContent = `${conf.contrast.toFixed(2)}x`;
+    }
 
-    document.getElementById('toggle-bloom').checked = conf.bloom;
+    const sSat = document.getElementById('slider-saturation');
+    if (sSat) {
+      sSat.value = conf.saturation;
+      document.getElementById('val-saturation').textContent = `${conf.saturation.toFixed(2)}x`;
+    }
 
-    // Update pill buttons and resolution cards
+    const sBright = document.getElementById('slider-brightness');
+    if (sBright) {
+      sBright.value = conf.brightness;
+      document.getElementById('val-brightness').textContent = (conf.brightness >= 0 ? '+' : '') + conf.brightness.toFixed(2);
+    }
+
+    const sBitrate = document.getElementById('slider-bitrate');
+    if (sBitrate) {
+      sBitrate.value = conf.bitrate;
+      document.getElementById('val-bitrate').textContent = `${conf.bitrate} Mbps`;
+    }
+
+    const tBloom = document.getElementById('toggle-bloom');
+    if (tBloom) tBloom.checked = conf.bloom;
+
+    // Update selectors
     setResolution(conf.resolution, false);
     setFps(conf.fps, false);
+    setCodec(conf.codec, false);
+    setDenoise(conf.denoise, false);
   }
 
   updateGeneratedCommand();
+}
+
+// Collapsible Pro Controls Accordion
+function toggleProControls() {
+  const container = document.getElementById('pro-controls-container');
+  const icon = document.getElementById('pro-controls-icon');
+  if (container) {
+    const isHidden = container.style.display === 'none';
+    container.style.display = isHidden ? 'flex' : 'none';
+    if (icon) icon.classList.toggle('rotated', !isHidden);
+  }
+}
+
+// Denoise Selection
+function setDenoise(val, updateCmd = true) {
+  state.denoise = parseFloat(val);
+  const container = document.getElementById('denoise-selector');
+  if (container) {
+    Array.from(container.children).forEach((btn) => {
+      btn.classList.toggle('active', btn.textContent.includes(val.toString()));
+    });
+  }
+  if (updateCmd) updateGeneratedCommand();
 }
 
 // Resolution Selection
@@ -155,20 +280,25 @@ function setResolution(res, updateCmd = true) {
 function setFps(fps, updateCmd = true) {
   state.fps = fps;
   const container = document.getElementById('fps-selector');
-  Array.from(container.children).forEach((btn) => {
-    btn.classList.toggle('active', btn.textContent.includes(fps.toString()));
-  });
-  document.getElementById('preview-fps-tag').textContent = `${fps} FPS FLOW`;
+  if (container) {
+    Array.from(container.children).forEach((btn) => {
+      btn.classList.toggle('active', btn.textContent.includes(fps.toString()));
+    });
+  }
+  const fpsBadge = document.getElementById('preview-fps-tag');
+  if (fpsBadge) fpsBadge.textContent = `${fps} FPS FLOW`;
   if (updateCmd) updateGeneratedCommand();
 }
 
-function setCodec(codec) {
+function setCodec(codec, updateCmd = true) {
   state.codec = codec;
   const container = document.getElementById('codec-selector');
-  Array.from(container.children).forEach((btn) => {
-    btn.classList.toggle('active', btn.textContent.toLowerCase().includes(codec));
-  });
-  updateGeneratedCommand();
+  if (container) {
+    Array.from(container.children).forEach((btn) => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase().includes(codec));
+    });
+  }
+  if (updateCmd) updateGeneratedCommand();
 }
 
 function updateParam(param, val) {
@@ -179,6 +309,12 @@ function updateParam(param, val) {
   } else if (param === 'contrast') {
     state.contrast = num;
     document.getElementById('val-contrast').textContent = `${num.toFixed(2)}x`;
+  } else if (param === 'saturation') {
+    state.saturation = num;
+    document.getElementById('val-saturation').textContent = `${num.toFixed(2)}x`;
+  } else if (param === 'brightness') {
+    state.brightness = num;
+    document.getElementById('val-brightness').textContent = (num >= 0 ? '+' : '') + num.toFixed(2);
   } else if (param === 'bitrate') {
     state.bitrate = parseInt(val, 10);
     document.getElementById('val-bitrate').textContent = `${state.bitrate} Mbps`;
@@ -203,11 +339,20 @@ function getCliCommand() {
   if (state.contrast !== presetConfig[state.preset]?.contrast) {
     cmd += ` --contrast ${state.contrast.toFixed(2)}`;
   }
+  if (state.saturation !== presetConfig[state.preset]?.saturation) {
+    cmd += ` --saturation ${state.saturation.toFixed(2)}`;
+  }
+  if (state.brightness !== presetConfig[state.preset]?.brightness) {
+    cmd += ` --brightness ${state.brightness.toFixed(2)}`;
+  }
+  if (state.denoise !== presetConfig[state.preset]?.denoise) {
+    cmd += ` --denoise ${state.denoise.toFixed(1)}`;
+  }
   return cmd;
 }
 
 function updateGeneratedCommand() {
-  const codeEl = document.getElementById('generated-cli-code');
+  const codeEl = document.getElementById('generated-command') || document.getElementById('generated-cli-code');
   if (codeEl) {
     codeEl.textContent = getCliCommand();
   }
