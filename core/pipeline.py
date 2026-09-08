@@ -37,12 +37,12 @@ def check_dependencies() -> None:
 
 
 def probe_video(file_path: str) -> Dict[str, Any]:
-    """Inspect video file and return resolution, framerate, duration, bitrate."""
+    """Inspect video file and return resolution, framerate, duration, bitrate, and true display orientation."""
     cmd = [
         "ffprobe",
         "-v", "error",
         "-select_streams", "v:0",
-        "-show_entries", "stream=width,height,r_frame_rate,duration,bit_rate,nb_frames",
+        "-show_entries", "stream=width,height,r_frame_rate,duration,bit_rate,nb_frames,tags:stream_side_data",
         "-show_entries", "format=duration,bit_rate",
         "-of", "json",
         file_path,
@@ -55,6 +55,26 @@ def probe_video(file_path: str) -> Dict[str, Any]:
         
         width = int(stream.get("width", 1080))
         height = int(stream.get("height", 1920))
+        
+        # Check rotation tags (crucial for mobile recordings)
+        rotation = 0
+        tags = stream.get("tags", {})
+        if tags and "rotate" in tags:
+            try:
+                rotation = abs(int(float(tags["rotate"])))
+            except (ValueError, TypeError):
+                pass
+        for sd in stream.get("side_data_list", []):
+            if "rotation" in sd:
+                try:
+                    rotation = abs(int(float(sd["rotation"])))
+                except (ValueError, TypeError):
+                    pass
+
+        # If rotated 90 or 270 degrees, display width and height are inverted
+        if rotation in (90, 270):
+            print(f"[*] Detected mobile rotation tag ({rotation}°). Adjusting display orientation to portrait.")
+            width, height = height, width
         
         # Parse framerate fraction e.g. "30000/1001" or "30/1"
         r_fps = stream.get("r_frame_rate", "30/1")
@@ -73,10 +93,12 @@ def probe_video(file_path: str) -> Dict[str, Any]:
             "fps": fps,
             "duration": duration,
             "bitrate": bitrate,
+            "rotation": rotation,
         }
     except Exception as e:
         print(f"[WARN] Could not probe video thoroughly ({e}). Using defaults.", file=sys.stderr)
-        return {"width": 1080, "height": 1920, "fps": 30.0, "duration": 0.0, "bitrate": 0}
+        return {"width": 1080, "height": 1920, "fps": 30.0, "duration": 0.0, "bitrate": 0, "rotation": 0}
+
 
 
 def download_file_if_url(input_path_or_url: str, dest_dir: str = "inputs") -> str:
@@ -114,13 +136,24 @@ def download_file_if_url(input_path_or_url: str, dest_dir: str = "inputs") -> st
 
 
 def generate_comparison_image(original_video: str, enhanced_video: str, output_image: str) -> None:
-    """Generate a side-by-side comparison JPEG highlighting Before vs After."""
+    """Generate a side-by-side comparison JPEG highlighting Before vs After with aspect ratio preservation."""
     print(f"[*] Generating Before/After comparison snapshot: {output_image}")
-    filter_expr = (
-        "[0:v]scale=540:960[v0];"
-        "[1:v]scale=540:960[v1];"
-        "[v0][v1]hstack=inputs=2[outv]"
-    )
+    orig_info = probe_video(original_video)
+    is_portrait = orig_info["height"] >= orig_info["width"]
+
+    if is_portrait:
+        filter_expr = (
+            "[0:v]scale=540:960:force_original_aspect_ratio=decrease,pad=540:960:(ow-iw)/2:(oh-ih)/2:black,setsar=1[v0];"
+            "[1:v]scale=540:960:force_original_aspect_ratio=decrease,pad=540:960:(ow-iw)/2:(oh-ih)/2:black,setsar=1[v1];"
+            "[v0][v1]hstack=inputs=2[outv]"
+        )
+    else:
+        filter_expr = (
+            "[0:v]scale=960:540:force_original_aspect_ratio=decrease,pad=960:540:(ow-iw)/2:(oh-ih)/2:black,setsar=1[v0];"
+            "[1:v]scale=960:540:force_original_aspect_ratio=decrease,pad=960:540:(ow-iw)/2:(oh-ih)/2:black,setsar=1[v1];"
+            "[v0][v1]vstack=inputs=2[outv]"
+        )
+
     cmd = [
         "ffmpeg", "-y",
         "-ss", "00:00:01",
@@ -138,6 +171,7 @@ def generate_comparison_image(original_video: str, enhanced_video: str, output_i
         print(f"[+] Comparison image created: {output_image}")
     except Exception as e:
         print(f"[WARN] Failed to generate comparison snapshot ({e}). Skipping.", file=sys.stderr)
+
 
 
 def enhance_video(
