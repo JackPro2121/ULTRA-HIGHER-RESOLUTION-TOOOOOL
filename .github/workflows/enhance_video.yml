@@ -39,11 +39,11 @@ on:
         description: "Target Frame Rate (Motion Flow)"
         required: true
         type: choice
-        default: "60"
+        default: "240"
         options:
+          - "240"
           - "60"
           - "120"
-          - "240"
           - "480"
           - "30"
       motion_mode:
@@ -76,6 +76,10 @@ on:
         options:
           - "h264"
           - "h265"
+      max_seconds:
+        description: "Trim input to N seconds (free-runner time/disk guardrail; 0 = full length)"
+        required: false
+        default: "6"
 
   push:
     paths:
@@ -88,6 +92,7 @@ permissions:
 jobs:
   enhance:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -98,10 +103,27 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install System Dependencies (FFmpeg with libx264/libx265)
+      - name: Free Up Disk Space (headroom for 4K frame processing)
+        run: |
+          echo "Disk before cleanup:"; df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" \
+                      /usr/local/lib/android /opt/hostedtoolcache/CodeQL 2>/dev/null || true
+          sudo apt-get clean || true
+          echo "Disk after cleanup:"; df -h /
+
+      - name: Install System Dependencies (FFmpeg + Software Vulkan for AI)
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          # ffmpeg for the render pipeline; Mesa 'lavapipe' gives the Real-ESRGAN /
+          # RIFE ncnn-vulkan binaries a CPU-backed Vulkan device on GPU-less runners.
+          sudo apt-get install -y ffmpeg \
+            mesa-vulkan-drivers libvulkan1 vulkan-tools ocl-icd-libopencl1
+
+      - name: Verify Vulkan Device (lavapipe)
+        run: |
+          echo "VULKAN_SDK/ICD check:"
+          vulkaninfo --summary 2>/dev/null | grep -iE "deviceName|driverName|apiVersion" || \
+            echo "vulkaninfo summary unavailable (AI stage will self-test and fall back if needed)."
 
       - name: Install Python Dependencies
         run: |
@@ -129,9 +151,10 @@ jobs:
           CLI_ARGS="$CLI_ARGS -o outputs/enhanced_${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}_${{ github.event.inputs.resolution || '4k' }}.mp4"
           CLI_ARGS="$CLI_ARGS -p ${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}"
           CLI_ARGS="$CLI_ARGS -r ${{ github.event.inputs.resolution || '4k' }}"
-          CLI_ARGS="$CLI_ARGS -fps ${{ github.event.inputs.fps || '60' }}"
+          CLI_ARGS="$CLI_ARGS -fps ${{ github.event.inputs.fps || '240' }}"
           CLI_ARGS="$CLI_ARGS -m ${{ github.event.inputs.motion_mode || 'blend' }}"
           CLI_ARGS="$CLI_ARGS --codec ${{ github.event.inputs.codec || 'h264' }}"
+          CLI_ARGS="$CLI_ARGS --max-seconds ${{ github.event.inputs.max_seconds || '6' }}"
 
           if [ "${{ github.event.inputs.bloom }}" = "false" ]; then
             CLI_ARGS="$CLI_ARGS --no-bloom"
@@ -146,12 +169,24 @@ jobs:
           fi
 
           echo "Running: python core/pipeline.py $CLI_ARGS"
-          eval python core/pipeline.py $CLI_ARGS
+          set -o pipefail
+          eval python core/pipeline.py $CLI_ARGS 2>&1 | tee outputs/_run.log
+
+      - name: Detect Whether Real AI Ran
+        if: always()
+        id: ai_status
+        run: |
+          if grep -q "AI super-resolution succeeded" outputs/_run.log 2>/dev/null; then
+            echo "mode=✅ Real-ESRGAN neural super-resolution (true detail)" >> $GITHUB_OUTPUT
+          else
+            echo "mode=⚠️ FFmpeg Lanczos fallback (AI/Vulkan unavailable on runner)" >> $GITHUB_OUTPUT
+          fi
+          rm -f outputs/_run.log outputs/_trimmed_input.mp4 outputs/*_ai_srx4.mp4 2>/dev/null || true
 
       - name: Upload Enhanced Video as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: "Enhanced-Video-${{ github.event.inputs.resolution || '4k' }}-${{ github.event.inputs.fps || '60' }}fps"
+          name: "Enhanced-Video-${{ github.event.inputs.resolution || '4k' }}-${{ github.event.inputs.fps || '240' }}fps"
           path: outputs/*
           retention-days: 14
 
@@ -165,7 +200,7 @@ jobs:
             ## 🚀 Ultra-High Resolution Video Enhancement Complete!
             - **Preset:** `${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}`
             - **Resolution:** `${{ github.event.inputs.resolution || '4k' }}`
-            - **Frame Rate:** `${{ github.event.inputs.fps || '60' }} FPS`
+            - **Frame Rate:** `${{ github.event.inputs.fps || '240' }} FPS`
             - **Codec:** `${{ github.event.inputs.codec || 'h264' }}`
             
             Download your enhanced lag-grade masterpiece below! 👇
@@ -179,5 +214,7 @@ jobs:
           echo "- **Status:** ✅ Successfully Generated" >> $GITHUB_STEP_SUMMARY
           echo "- **Preset:** ${{ github.event.inputs.preset || 'viral_tiktok_hdr' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Resolution:** ${{ github.event.inputs.resolution || '4k' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Target FPS:** ${{ github.event.inputs.fps || '60' }} FPS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target FPS:** ${{ github.event.inputs.fps || '240' }} FPS" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trim Guardrail:** ${{ github.event.inputs.max_seconds || '6' }}s" >> $GITHUB_STEP_SUMMARY
+          echo "- **Upscale Engine:** ${{ steps.ai_status.outputs.mode }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Files Ready in Artifacts and Releases tab!**" >> $GITHUB_STEP_SUMMARY

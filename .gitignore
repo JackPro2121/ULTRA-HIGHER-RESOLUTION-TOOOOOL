@@ -16,8 +16,13 @@ outputs/*.jpg
 
 # Inputs (ignore downloaded user videos)
 inputs/downloaded_input.mp4
-!inputs/test_mobile_raw.mp4
+!inputs/sample_whatsapp.mp4
 !inputs/.gitkeep
+
+# Auto-downloaded AI binaries (Real-ESRGAN / RIFE ncnn-vulkan) and work dirs
+core/bin/
+**/_ai_work/
+outputs/*_ai_srx4.mp4
 
 # OS
 .DS_Store

@@ -27,6 +27,7 @@ def build_filtergraph(
     brightness_override: Optional[float] = None,
     gamma_override: Optional[float] = None,
     denoise_override: Optional[float] = None,
+    ai_prescaled: bool = False,
 ) -> Tuple[str, int, int]:
     """
     Build a complete FFmpeg filtergraph string and return (filtergraph_str, out_w, out_h).
@@ -46,9 +47,11 @@ def build_filtergraph(
     else:  # 1080p
         base_w, base_h = (1080, 1920) if is_portrait else (1920, 1080)
 
-    # Scale filter with aspect ratio preservation and 2-pixel alignment
+    # High-quality Lanczos scale with aspect ratio preservation and 2-pixel alignment.
+    # In AI mode this is an exact-size resize of the already-super-resolved frames
+    # (usually a mild downscale, which sharpens without inventing/destroying detail).
     scale_filter = (
-        f"scale={base_w}:{base_h}:force_original_aspect_ratio=decrease,"
+        f"scale={base_w}:{base_h}:force_original_aspect_ratio=decrease:flags=lanczos,"
         f"pad={base_w}:{base_h}:(ow-iw)/2:(oh-ih)/2:black,"
         f"setsar=1"
     )
@@ -67,13 +70,23 @@ def build_filtergraph(
     gamma = gamma_override if gamma_override is not None else preset.get("gamma", 0.96)
     s_curve = preset.get("s_curve", "0/0 0.22/0.16 0.50/0.50 0.78/0.86 1/1")
 
+    # When the frames were already neural-super-resolved by Real-ESRGAN they are
+    # clean and detail-rich, so we skip the aggressive pre-denoise and dial back the
+    # sharpeners to avoid halos / over-sharpening on top of real AI detail.
+    if ai_prescaled:
+        cas_strength = min(cas_strength, 0.35)
+        unsharp_luma = min(unsharp_luma, 0.6)
+        unsharp_chroma = min(unsharp_chroma, 0.4)
+
     # Step-by-step filter assembly
     filters = []
 
-    # A. Noise reduction before sharpening to prevent grain explosion
-    filters.append(f"hqdn3d=luma_spatial={denoise_luma}:chroma_spatial={denoise_chroma}:luma_tmp=3:chroma_tmp=3")
+    # A. Noise reduction before sharpening to prevent grain explosion.
+    #    Skipped in AI mode (Real-ESRGAN output is already denoised).
+    if not ai_prescaled:
+        filters.append(f"hqdn3d=luma_spatial={denoise_luma}:chroma_spatial={denoise_chroma}:luma_tmp=3:chroma_tmp=3")
 
-    # B. High precision upscale
+    # B. High precision Lanczos resize to the exact target resolution.
     filters.append(scale_filter)
 
     # C. AMD FidelityFX CAS (Contrast Adaptive Sharpening)

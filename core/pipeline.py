@@ -190,6 +190,11 @@ def enhance_video(
     bitrate_override: Optional[int] = None,
     codec: str = "h264",
     generate_comparison: bool = True,
+    use_ai: bool = True,
+    ai_model: str = "realesrgan-x4plus",
+    ai_tile: int = 128,
+    ai_segment_seconds: int = 2,
+    max_seconds: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Execute the full video enhancement pipeline."""
     check_dependencies()
@@ -198,6 +203,27 @@ def enhance_video(
     if not os.path.exists(local_input):
         print(f"[ERROR] Input video not found: {local_input}", file=sys.stderr)
         sys.exit(1)
+
+    # Duration guardrail: on a free CI runner a long clip at high FPS/resolution
+    # overruns the 6 h / disk budget. Trim to `max_seconds` up front (stream-copy,
+    # instant) so the run stays inside the budget. Set <= 0 to disable.
+    if max_seconds and max_seconds > 0:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        dur = probe_video(local_input).get("duration", 0.0)
+        if dur and dur > max_seconds:
+            trimmed = os.path.join(
+                os.path.dirname(os.path.abspath(output_path)), "_trimmed_input.mp4"
+            )
+            print(f"[*] Guardrail: trimming input from {dur:.1f}s to first {max_seconds:.0f}s...")
+            r = subprocess.run(
+                ["ffmpeg", "-y", "-i", local_input, "-t", str(max_seconds),
+                 "-c", "copy", trimmed],
+                capture_output=True, text=True,
+            )
+            if r.returncode == 0 and os.path.exists(trimmed) and os.path.getsize(trimmed) > 0:
+                local_input = trimmed
+            else:
+                print("[WARN] Trim failed; proceeding with full-length input.", file=sys.stderr)
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
@@ -222,6 +248,52 @@ def enhance_video(
     bitrate_mbps = bitrate_override if bitrate_override is not None else preset.get("bitrate_mbps", 65)
     print(f" Codec       : {final_codec.upper()} Master Bitrate: {bitrate_mbps} Mbps")
 
+    # ---------------------------------------------------------------- Guardrails
+    # Real neural upscaling materialises frames on disk. On free CI runners
+    # (~14 GB disk, 6 h wall-clock, no GPU) 8K/12K blows the budget, so we keep
+    # the job alive by disabling the AI stage for those tiers (FFmpeg still runs).
+    if use_ai and resolution.lower() in ("8k", "12k"):
+        print(f"[GUARDRAIL] AI super-resolution disabled for {resolution.upper()} "
+              f"(disk/time budget). Using FFmpeg upscaling instead.")
+        use_ai = False
+    est_frames = info["duration"] * float(target_fps) if info["duration"] else 0.0
+    if est_frames and est_frames > 9000:
+        print(f"[GUARDRAIL] ~{est_frames:.0f} output frames requested "
+              f"({info['duration']:.0f}s x {target_fps}fps). This may be slow on CI; "
+              f"consider a shorter clip or lower FPS if the job times out.")
+
+    # ------------------------------------------------ AI Super-Resolution Stage
+    # Produces REAL detail (Real-ESRGAN) so zoomed-in areas stay sharp — this is
+    # what Lanczos scaling alone cannot do. Fully optional and fail-safe: on any
+    # problem we fall straight back to the pure-FFmpeg upscaling path.
+    filter_input = local_input
+    ai_prescaled = False
+    if use_ai:
+        try:
+            from core.ai_engine import AINeuralEngine
+            engine = AINeuralEngine()
+            if engine.upscale_available() and engine.self_test():
+                ai_intermediate = os.path.splitext(output_path)[0] + "_ai_srx4.mp4"
+                print("\n[*] AI Stage: Real-ESRGAN neural super-resolution (real detail)...")
+                if engine.upscale_video(
+                    input_video=local_input,
+                    output_video=ai_intermediate,
+                    source_fps=info["fps"] or 30.0,
+                    model=ai_model,
+                    scale=4,
+                    segment_seconds=ai_segment_seconds,
+                    tile=ai_tile,
+                ):
+                    filter_input = ai_intermediate
+                    ai_prescaled = True
+                    print("[+] AI super-resolution succeeded — grading real 4K detail.")
+                else:
+                    print("[WARN] AI super-resolution failed; using FFmpeg upscaling.", file=sys.stderr)
+            else:
+                print("[WARN] AI upscaler/Vulkan unavailable; using FFmpeg upscaling.", file=sys.stderr)
+        except Exception as e:
+            print(f"[WARN] AI stage error ({e}); using FFmpeg upscaling.", file=sys.stderr)
+
     # Build Complex Filtergraph
     filtergraph_str, out_w, out_h = build_filtergraph(
         preset=preset,
@@ -237,22 +309,32 @@ def enhance_video(
         brightness_override=brightness_override,
         gamma_override=gamma_override,
         denoise_override=denoise_override,
+        ai_prescaled=ai_prescaled,
     )
 
-    # FFmpeg Command Assembly
-    cmd = ["ffmpeg", "-y", "-i", local_input, "-filter_complex", filtergraph_str, "-map", "[outv]"]
+    # FFmpeg Command Assembly. The graded video comes from `filter_input` (input 0);
+    # when AI produced a silent intermediate we pull audio from the ORIGINAL (input 1).
+    cmd = ["ffmpeg", "-y", "-i", filter_input]
+    if ai_prescaled:
+        cmd.extend(["-i", local_input])
+        audio_map = "1:a?"
+    else:
+        audio_map = "0:a?"
+    cmd.extend(["-filter_complex", filtergraph_str, "-map", "[outv]"])
 
-    # Map original audio if present
-    cmd.extend(["-map", "0:a?", "-c:a", "aac", "-b:a", "320k"])
+    # Map audio (from original when AI intermediate is silent).
+    cmd.extend(["-map", audio_map, "-c:a", "aac", "-b:a", "320k"])
 
     # Video Codec settings
+    # NOTE: CRF drives visual quality; the bitrate is applied only as a VBV ceiling
+    # (maxrate/bufsize). We do NOT pass -b:v, because giving both -crf and -b:v forces
+    # ABR mode and makes the encoder ignore CRF — a silent quality regression.
     if final_codec.lower() in ["h265", "hevc"]:
         cmd.extend([
             "-c:v", "libx265",
-            "-preset", "medium",
+            "-preset", "slow",
             "-crf", "14",
-            "-b:v", f"{bitrate_mbps}M",
-            "-maxrate", f"{int(bitrate_mbps * 1.3)}M",
+            "-maxrate", f"{int(bitrate_mbps * 1.5)}M",
             "-bufsize", f"{int(bitrate_mbps * 2.0)}M",
             "-tag:v", "hvc1",
         ])
@@ -263,8 +345,7 @@ def enhance_video(
             "-profile:v", "high",
             "-level:v", "5.2",
             "-crf", "12",
-            "-b:v", f"{bitrate_mbps}M",
-            "-maxrate", f"{int(bitrate_mbps * 1.3)}M",
+            "-maxrate", f"{int(bitrate_mbps * 1.5)}M",
             "-bufsize", f"{int(bitrate_mbps * 2.0)}M",
         ])
 
@@ -303,10 +384,17 @@ def enhance_video(
     print(f"\n\n[✓] Enhancement Complete in {elapsed:.1f}s!")
     print(f"[✓] Master Output Saved: {output_path} ({os.path.getsize(output_path) / 1024 / 1024:.2f} MB)")
 
-    # Generate Comparison Image
+    # Generate Comparison Image (always original vs final for a true before/after)
     if generate_comparison:
         comp_img = os.path.splitext(output_path)[0] + "_comparison.jpg"
         generate_comparison_image(local_input, output_path, comp_img)
+
+    # Remove the large AI intermediate now that the master is encoded.
+    if ai_prescaled and filter_input != local_input and os.path.exists(filter_input):
+        try:
+            os.remove(filter_input)
+        except Exception:
+            pass
 
     return {
         "output_video": output_path,
@@ -357,6 +445,11 @@ def main():
     parser.add_argument("--bitrate", type=int, default=None, help="Override export bitrate in Mbps (e.g. 80, 120)")
     parser.add_argument("--codec", default="h264", choices=["h264", "h265"], help="Video codec (h264 or h265)")
     parser.add_argument("--no-comparison", action="store_true", help="Skip generating before/after comparison image")
+    parser.add_argument("--no-ai", action="store_true", help="Disable Real-ESRGAN AI super-resolution (use FFmpeg upscaling only)")
+    parser.add_argument("--ai-model", default="realesrgan-x4plus", help="Real-ESRGAN model name (e.g. realesrgan-x4plus, realesr-animevideov3)")
+    parser.add_argument("--ai-tile", type=int, default=128, help="AI tile size; lower uses less RAM on CPU/software Vulkan (e.g. 64, 128)")
+    parser.add_argument("--ai-segment", type=int, default=2, help="Seconds per AI processing segment (disk-safety; lower = less peak disk)")
+    parser.add_argument("--max-seconds", type=float, default=None, help="Trim input to this many seconds before processing (CI time/disk guardrail; <=0 disables)")
 
     args = parser.parse_args()
 
@@ -377,6 +470,11 @@ def main():
         bitrate_override=args.bitrate,
         codec=args.codec,
         generate_comparison=not args.no_comparison,
+        use_ai=not args.no_ai,
+        ai_model=args.ai_model,
+        ai_tile=args.ai_tile,
+        ai_segment_seconds=args.ai_segment,
+        max_seconds=args.max_seconds,
     )
 
 
